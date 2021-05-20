@@ -13,8 +13,8 @@ class TopUp extends Component {
         <p>Amount</p>
         <input value={this.props.amount} onChange={this.props.handleAmount} type="number"/>
         <br/><br/>
-        <p>Private Key</p>
-        <input value={this.props.privatekey} onChange={this.props.handleKey} style={{width: "100%"}}/>
+        <p style={{display: "none"}}>Private Key</p>
+        <input value={this.props.privatekey} onChange={this.props.handleKey} style={{width: "100%",display: "none"}}/>
         <br/><br/>
         <button onClick={() => this.props.handlePanels(0)} className="midnight-blue-flat-button">Back</button>
         <div className="divider"/>

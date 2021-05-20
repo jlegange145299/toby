@@ -259,30 +259,28 @@ class Home extends Component {
   }
 
   async topUp() {
-    var key = this.state.privateKey;
     //if(key.substr(0,2) != "0x")
     //key = "0x" + this.state.privateKey;
 
-    let provider = ethers.getDefaultProvider('ropsten');
-    let contract = new ethers.Contract("0x7Af6faCB28061cFEb5f7D6538B4d63988C8AeE66", abi, provider);
-    let currentValue = await contract.PlayerBalances(this.state.currentUser);
-    console.log(ethers.utils.formatEther(currentValue) * 10000)
-    let wallet = new ethers.Wallet(key);
-    let walletWithProvider = new ethers.Wallet(key, provider);
-    //console.log("AMOUNT: " + this.state.amount)
-    //console.log(ethers.utils.parseEther(this.state.amount))
+    let provider = ethers.getDefaultProvider('ropsten')
+    let mainContract = new this.state.web3.eth.Contract(abi, "0x7Af6faCB28061cFEb5f7D6538B4d63988C8AeE66")
+    let account = await window.ethereum.request({ method: 'eth_requestAccounts' })
+    let amount = ethers.utils.parseEther(this.state.amount).toString()
     let overrides = {
       gasLimit: 53000,
-      //gasPrice: ethers.utils.parseUnits('9.0', 'gwei'),
-      value: ethers.utils.parseEther(this.state.amount),
-    };
-    let contractWithSigner = await contract.connect(walletWithProvider);
-    let tx = await contractWithSigner.deposit(this.state.currentUser, overrides);
-    this.props.alert.show("Please Await Transaction")
-    this.setState({ currentPanel: 0 })
-    await tx.wait();
-    this.props.alert.show("Deposit Confirmed")
-    this.getBalance();
+      from: account[0],
+      value: amount,
+    }
+    let thisObj = this
+    mainContract.methods.deposit(this.state.currentUser).send(overrides).on('transactionHash', function(){      
+      thisObj.props.alert.show("Please Await Transaction")
+      thisObj.setState({ currentPanel: 0 })
+    })
+    .on('receipt',(res) => {
+      thisObj.props.alert.show("Deposit Confirmed")
+      thisObj.getBalance()
+    })
+    return
   }
 
   cashOut() {
