@@ -415,7 +415,10 @@ class Home extends Component {
           <div onClick={this.quitGame} style={{ position: "absolute", right: "0px", bottom: "0px", backgroundColor: "#00000052", borderRadius: "5px", margin: "10px", color: "white", padding: "5px" }}>
             Quit Game</div>
           : null}
-        <Chat messageList={this.state.messageList} chatMessage={this.state.chatMessage} handleChat={this.handleMessageBox} sendMessage={this.sendMessage} />
+        {
+          this.state.gameStarted &&
+          <Chat messageList={this.state.messageList} chatMessage={this.state.chatMessage} handleChat={this.handleMessageBox} sendMessage={this.sendMessage} />
+        }
       </div>
     );
   }
