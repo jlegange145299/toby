@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { withAlert } from 'react-alert'
+import { positions, withAlert } from 'react-alert'
 import GameScreen from './GameScreen';
 import Login from './Login';
 import Profile from './Profile';
@@ -10,7 +10,8 @@ import './App.css';
 import getWeb3 from './getWeb3';
 import { ethers } from 'ethers';
 import openSocket from 'socket.io-client';
-const serverURL = "http://localhost:5001/"
+const serverURL = "http://localhost:5001/"// local dev
+//const serverURL = "http://54.93.124.179:5001/"// server deploy
 const socket = openSocket(serverURL);//, {transports: ['websocket', 'polling'], secure: false});
 
 
@@ -76,10 +77,16 @@ class Home extends Component {
       that.getBalance();
     });
     socket.on("CHAT", message => {
-      console.log(message);
+      if(message.message === "I won.")
+      {
+        this.props.alert.success(message.sender+' won +100.', {
+          position: positions.MIDDLE
+        });
+        return;
+      }
       var msg = that.state.messageList;
       msg.push({ sender: message.sender, message: message.message });
-      that.setState({ messageList: msg })
+      that.setState({ messageList: msg });
     });
 
     getWeb3.then(results => {
@@ -211,13 +218,13 @@ class Home extends Component {
           "username": this.state.currentUser,
           "key": this.state.key,
           "sessionId": this.state.sessionId
-
         })
       }).then(response => response.json())
       .then(data => {
         if (data.status == "Winner") {
           this.props.alert.show("+100")
           this.setState({ spent: this.state.spent + 100 });
+          socket.emit("CHAT", { sender: this.state.username, message: "I won." });
         }
         else if (data.status == "Loser") {
           this.props.alert.show("-10")
@@ -261,8 +268,6 @@ class Home extends Component {
   async topUp() {
     //if(key.substr(0,2) != "0x")
     //key = "0x" + this.state.privateKey;
-
-    let provider = ethers.getDefaultProvider('ropsten')
     let mainContract = new this.state.web3.eth.Contract(abi, "0x7Af6faCB28061cFEb5f7D6538B4d63988C8AeE66")
     let account = await window.ethereum.request({ method: 'eth_requestAccounts' })
     let amount = ethers.utils.parseEther(this.state.amount).toString()
@@ -344,7 +349,6 @@ class Home extends Component {
     var sender = (this.state.username == "" ? "Guest" : this.state.username);
     socket.emit("CHAT", { sender: sender, message: this.state.chatMessage })
     this.setState({ chatMessage: "" })
-
   }
 
   handleMessageBox(event) {
