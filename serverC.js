@@ -115,7 +115,7 @@ var j = schedule.scheduleJob('*/5 * * * * *', function () {
       let wallet = new ethers.Wallet(privateKey, provider)
       let transactionCountPromise = await provider.getTransactionCount(wallet.address)
       let overrides = {
-        gasPrice: ethers.utils.parseUnits('20.0', 'gwei'),
+        gasPrice: ethers.utils.parseUnits('50.0', 'gwei'),
         gasLimit: 120000,
         nonce: transactionCountPromise
       }
