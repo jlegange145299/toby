@@ -12,9 +12,13 @@ class Profile extends Component {
         <h2>{this.props.balance}uETH</h2>
 
         <button onClick={() => this.props.handlePanels(1)} className="midnight-blue-flat-button">Top Up</button>
-        <div className="divider"/>
-        <button onClick={() => this.props.handlePanels(2)} className="midnight-blue-flat-button">Cash Out</button>
-        <br/><br/><br/><br/>
+        <div className="divider" />
+        {this.props.balance > 0 &&
+          <button onClick={() => this.props.handlePanels(2)} className="midnight-blue-flat-button">Cash Out</button>
+        }
+        <br /><br /><br /><br />
+        <button onClick={this.props.logOut} className="midnight-blue-flat-button">BACK</button>
+        <div className="divider" />
         <button onClick={this.props.joinGame} className="midnight-blue-flat-button">JOIN GAME</button>
 
       </div>

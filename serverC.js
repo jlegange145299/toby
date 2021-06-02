@@ -81,10 +81,7 @@ io.on('connection', function (socket) {
           activeList.splice(index, 1);
           io.emit("ADD", { count: activeList.length })
         });
-
       });
-
-
     }
   });
 
@@ -213,6 +210,7 @@ app.post('/register', async function (req, res) {
         bcrypt.hash(req.body.password, 10, function (err, hash) {
           var newUser = new User({
             username: req.body.username,
+            email: req.body.email,
             userhash: userhash,
             password: hash,
             coinbase: "",

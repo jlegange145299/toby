@@ -70,20 +70,19 @@ class GameScreen extends Component {
     });
 
     for (let i = 0; i < balloonCount; i++) {
-      let balloon = this.physics.add.sprite(Math.random() * window.innerWidth, Math.random() * window.innerHeight, 'balloon').setInteractive();
+      let balloon = this.physics.add.sprite(Math.random() * window.innerWidth, window.innerHeight, 'balloon', { ignoreGravity: false }).setInteractive();
       balloons.push(balloon);
       balloons[i].displayWidth = 140;
       balloons[i].displayHeight = 200;
 
       let speedX = 400 + Math.random() * 200;
-      let speedY = 300 + Math.random() * 200;
-      balloons[i].body.maxVelocity = { x: speedX, y: speedY };
-      balloons[i].setBounce(1);
-      balloons[i].setCollideWorldBounds(true);
-      balloons[i].body.setGravityY(50+i*10);
-
-      var velocityFromRotation = this.physics.velocityFromRotation;
-      var velocity = new Phaser.Math.Vector2();
+      let speedY = - 1 * (300 + Math.random() * 200);
+      // balloons[i].body.maxVelocity = { x: speedX, y: speedY };
+      balloons[i].body.allowGravity = false;
+      balloons[i].setBounce(0, 0);
+      balloons[i].setAcceleration(0, 0);
+      balloons[i].setCollideWorldBounds(false);
+      balloons[i].body.setGravityY(0);
       balloons[i].setVelocity(speedX, speedY);
       balloons[i].body.angularVelocity = 250 + Math.random() * 100;
       balloons[i].body.angularDrag = 0;
@@ -95,12 +94,13 @@ class GameScreen extends Component {
         balloons[i].on('animationcomplete', (animation, frame) => {
           if (animation.key == "pop") {
             balloons[i].x = Math.random() * window.innerWidth;
-            balloons[i].y = 100;
+            balloons[i].y = window.innerHeight;
             balloons[i].anims.play("idle", true);
           }
         }, this);
       });
     }
+    this.balloons = balloons;
   }
 
 
@@ -108,6 +108,24 @@ class GameScreen extends Component {
     this.cloudBack.tilePositionX -= 0.15;
     this.cloudMid.tilePositionX += 0.3;
     this.cloudFront.tilePositionX -= 0.75;
+
+    for (let i = 0; i < balloonCount; i++) {
+      if (this.balloons[i].x < 0) {
+        this.balloons[i].x = window.innerWidth;
+      }
+      else if (this.balloons[i].x > window.innerWidth) {
+        this.balloons[i].x = 0;
+      }
+      if (this.balloons[i].y < 0) {
+        this.balloons[i].y = window.innerHeight;
+      }
+      else if (this.balloons[i].y > window.innerHeight) {
+        this.balloons[i].y = 0;
+      }
+      let speedX = 200 + Math.random() * 200;
+      let speedY = - 1 * (150 + Math.random() * 200);
+      this.balloons[i].setVelocity(speedX, speedY);
+    }
   }
 
 

@@ -6,6 +6,7 @@ var userSchema = new mongoose.Schema({
   username: String,
   userhash: String,
   password: String,
+  email: String,
   //key: String,
   coinbase: String,
   balance: Number,

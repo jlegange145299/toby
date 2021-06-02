@@ -11,12 +11,19 @@ import getWeb3 from './getWeb3';
 import { ethers } from 'ethers';
 import openSocket from 'socket.io-client';
 const serverURL = "http://localhost:5001/"// local dev
-//const serverURL = "http://54.93.124.179:5001/"// server deploy
+//const serverURL = "http://cryptopop.fun:5001/"// server deploy
 const socket = openSocket(serverURL);//, {transports: ['websocket', 'polling'], secure: false});
 
 
 const abi = [{ "constant": false, "inputs": [{ "name": "amount", "type": "uint256" }, { "name": "user", "type": "bytes32" }, { "name": "userAddress", "type": "address" }, { "name": "newBalance", "type": "uint256" }], "name": "withdraw", "outputs": [{ "name": "success", "type": "bool" }], "payable": false, "stateMutability": "nonpayable", "type": "function" }, { "constant": true, "inputs": [{ "name": "", "type": "bytes32" }], "name": "PlayerBalances", "outputs": [{ "name": "", "type": "uint256" }], "payable": false, "stateMutability": "view", "type": "function" }, { "constant": false, "inputs": [{ "name": "sender", "type": "address" }], "name": "changeAdmin", "outputs": [{ "name": "success", "type": "bool" }], "payable": false, "stateMutability": "nonpayable", "type": "function" }, { "constant": false, "inputs": [{ "name": "user", "type": "bytes32" }], "name": "deposit", "outputs": [{ "name": "success", "type": "bool" }], "payable": true, "stateMutability": "payable", "type": "function" }, { "constant": true, "inputs": [], "name": "admin", "outputs": [{ "name": "", "type": "address" }], "payable": false, "stateMutability": "view", "type": "function" }, { "inputs": [], "payable": true, "stateMutability": "payable", "type": "constructor" }];
 
+const colors = ['#f72585', '#b5179e', '#7209b7', '#560bad', '#480ca8', '#ffadad', '#22577a', '#38a3a5', '#57cc99', '#80ed99', '#ff0a54', '#ff477e', '#ff5c8a', '#004b23', '#006400', '#007200', '#38b000', '#ff7b00', '#ff9500', '#ffb700'];
+
+function getRandomInt(min, max) {
+  min = Math.ceil(min);
+  max = Math.floor(max);
+  return Math.floor(Math.random() * (max - min) + min); //The maximum is exclusive and the minimum is inclusive
+}
 
 class Home extends Component {
   constructor(props) {
@@ -39,9 +46,11 @@ class Home extends Component {
       amount: 0,
       messageList: [{ sender: "GM", message: "Welcome to Balloon Game!" }],
       chatMessage: "",
+      colorIndex: 0,
     }
 
     this.login = this.login.bind(this)
+    this.logOut = this.logOut.bind(this)
     this.register = this.register.bind(this)
     this.getBalance = this.getBalance.bind(this)
     this.handlePanels = this.handlePanels.bind(this)
@@ -77,24 +86,20 @@ class Home extends Component {
       that.getBalance();
     });
     socket.on("CHAT", message => {
-      if(message.message === "I won.")
-      {
-        this.props.alert.success(message.sender+' won +100.', {
+      if (message.message === "I won." /*&& message.sender !== this.state.username*/) {
+        this.props.alert.success(<div style={{fontSize: '1.5em',wordBreak: 'break-all'}}>{message.sender} won +100.</div>, {
           position: positions.MIDDLE
         });
         return;
       }
       var msg = that.state.messageList;
-      msg.push({ sender: message.sender, message: message.message });
+      msg.push({ sender: message.sender, message: message.message, color: message.color });
       that.setState({ messageList: msg });
     });
 
     getWeb3.then(results => {
       this.setState({ web3: results.web3 })
       var that = this;
-
-
-
       results.web3.eth.getAccounts((error, accounts) => {
         if (accounts && accounts.length != 0) {
           this.setState({ coinbase: accounts[0] })
@@ -113,9 +118,11 @@ class Home extends Component {
         }
       }).catch(() => { console.log('Error finding web3.') });
     });
+
+    this.setState({ colorIndex: getRandomInt(0, colors.length) });
   }
 
-  register(username, password) {
+  register(username, email, password) {
     console.log("Registering...")
     fetch(serverURL + 'register/',
       {
@@ -126,6 +133,7 @@ class Home extends Component {
         },
         body: JSON.stringify({
           "username": username,
+          "email": email,
           "password": password
         })
       }).then(response => response.json())
@@ -164,12 +172,15 @@ class Home extends Component {
           var userhash = this.state.web3.utils.soliditySha3(username);
           this.setState({ currentUser: userhash, username: username, password: password }, function () {
             this.getBalance();
-          })
-
+          });
         }
       }).catch(function (err) {
         console.log(err)
       });
+  }
+
+  logOut() {
+    document.location.reload();
   }
 
   async getBalance() {
@@ -222,12 +233,16 @@ class Home extends Component {
       }).then(response => response.json())
       .then(data => {
         if (data.status == "Winner") {
-          this.props.alert.show("+100")
+          this.props.alert.success(<div style={{fontSize: '2em'}}>+100</div>,{
+            position: positions.MIDDLE
+          });
           this.setState({ spent: this.state.spent + 100 });
           socket.emit("CHAT", { sender: this.state.username, message: "I won." });
         }
         else if (data.status == "Loser") {
-          this.props.alert.show("-10")
+          this.props.alert.show("-10",{
+            position: positions.BOTTOM_RIGHT
+          });
           this.setState({ spent: this.state.spent - 10 });
         }
         else {
@@ -268,24 +283,29 @@ class Home extends Component {
   async topUp() {
     //if(key.substr(0,2) != "0x")
     //key = "0x" + this.state.privateKey;
-    let mainContract = new this.state.web3.eth.Contract(abi, "0x7Af6faCB28061cFEb5f7D6538B4d63988C8AeE66")
-    let account = await window.ethereum.request({ method: 'eth_requestAccounts' })
-    let amount = ethers.utils.parseEther(this.state.amount).toString()
+    let mainContract = new this.state.web3.eth.Contract(abi, "0x7Af6faCB28061cFEb5f7D6538B4d63988C8AeE66");
+    let account = await window.ethereum.request({ method: 'eth_requestAccounts' });
+    let chainId = await window.ethereum.request({ method: 'eth_chainId' });
+    if (chainId != 3) {
+      this.props.alert.error("Wrong network");
+      return;
+    }
+    let amount = ethers.utils.parseEther(this.state.amount).toString();
     let overrides = {
       gasLimit: 53000,
       from: account[0],
       value: amount,
-    }
-    let thisObj = this
-    mainContract.methods.deposit(this.state.currentUser).send(overrides).on('transactionHash', function(){      
+    };
+    let thisObj = this;
+    mainContract.methods.deposit(this.state.currentUser).send(overrides).on('transactionHash', function () {
       thisObj.props.alert.show("Please Await Transaction")
       thisObj.setState({ currentPanel: 0 })
     })
-    .on('receipt',(res) => {
-      thisObj.props.alert.show("Deposit Confirmed")
-      thisObj.getBalance()
-    })
-    return
+      .on('receipt', (res) => {
+        thisObj.props.alert.show("Deposit Confirmed")
+        thisObj.getBalance()
+      });
+    return;
   }
 
   cashOut() {
@@ -347,7 +367,7 @@ class Home extends Component {
 
   sendMessage() {
     var sender = (this.state.username == "" ? "Guest" : this.state.username);
-    socket.emit("CHAT", { sender: sender, message: this.state.chatMessage })
+    socket.emit("CHAT", { sender: sender, message: this.state.chatMessage, color: this.state.colorIndex })
     this.setState({ chatMessage: "" })
   }
 
@@ -375,6 +395,7 @@ class Home extends Component {
     const profilePanels = [
       <Profile
         joinGame={this.joinGame}
+        logOut={this.logOut}
         username={this.state.username}
         balance={this.state.balance + this.state.spent}
         handlePanels={this.handlePanels}
@@ -406,7 +427,7 @@ class Home extends Component {
       <div className="Home">
         <div className="Panel">
           <h1>Balloon Game</h1>
-          {this.state.currentUser == "" ? <Login login={this.login} register={this.register} /> : (this.state.gameStarted ? null : profilePanels[this.state.currentPanel])}
+          {this.state.currentUser == "" ? <Login login={this.login} register={this.register}/> : (this.state.gameStarted ? null : profilePanels[this.state.currentPanel])}
         </div>
         <GameScreen userCount={this.state.userCount} clickBalloon={this.clickBalloon} gameStarted={this.state.gameStarted} />
         <div style={{ position: "absolute", left: "0px", top: "0px", backgroundColor: "#00000052", borderRadius: "5px", margin: "10px", color: "white", padding: "5px" }}>
@@ -421,7 +442,7 @@ class Home extends Component {
           : null}
         {
           this.state.gameStarted &&
-          <Chat messageList={this.state.messageList} chatMessage={this.state.chatMessage} handleChat={this.handleMessageBox} sendMessage={this.sendMessage} />
+          <Chat messageList={this.state.messageList} chatMessage={this.state.chatMessage} handleChat={this.handleMessageBox} sendMessage={this.sendMessage} colors={colors}/>
         }
       </div>
     );
