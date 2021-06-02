@@ -10,7 +10,7 @@ const options = {
   position: 'bottom center',
   timeout: 5000,
   offset: '30px',
-  transition: 'scale'
+  transition: 'fade',
 }
 
 ReactDOM.render(<AlertProvider template={AlertTemplate} {...options}><App /></AlertProvider>, document.getElementById('root'));

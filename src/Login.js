@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import { positions, withAlert } from 'react-alert'
 import './App.css';
 
 class Login extends Component {
@@ -35,6 +36,11 @@ class Login extends Component {
 
   handleLogin() {
     if (this.state.isLogin) {
+      if(this.state.username == "")
+      {
+        this.props.alert.error("Input username");
+        return;
+      }
       this.props.login(this.state.username, this.state.password);
     }
     else {
@@ -48,6 +54,11 @@ class Login extends Component {
 
   handleRegister() {
     if (this.state.isRegister) {
+      if(this.state.username == "")
+      {
+        this.props.alert.error("Input username");
+        return;
+      }
       this.props.register(this.state.username, this.state.email, this.state.password);
     }
     else {
@@ -96,4 +107,4 @@ class Login extends Component {
   }
 }
 
-export default Login;
+export default withAlert()(Login);

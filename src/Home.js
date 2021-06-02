@@ -10,8 +10,8 @@ import './App.css';
 import getWeb3 from './getWeb3';
 import { ethers } from 'ethers';
 import openSocket from 'socket.io-client';
-const serverURL = "http://localhost:5001/"// local dev
-//const serverURL = "http://cryptopop.fun:5001/"// server deploy
+//const serverURL = "http://localhost:5001/"// local dev
+const serverURL = "http://cryptopop.fun:5001/"// server deploy
 const socket = openSocket(serverURL);//, {transports: ['websocket', 'polling'], secure: false});
 
 
