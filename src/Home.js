@@ -17,7 +17,7 @@ const socket = openSocket(serverURL);//, {transports: ['websocket', 'polling'], 
 
 const abi = [{ "constant": false, "inputs": [{ "name": "amount", "type": "uint256" }, { "name": "user", "type": "bytes32" }, { "name": "userAddress", "type": "address" }, { "name": "newBalance", "type": "uint256" }], "name": "withdraw", "outputs": [{ "name": "success", "type": "bool" }], "payable": false, "stateMutability": "nonpayable", "type": "function" }, { "constant": true, "inputs": [{ "name": "", "type": "bytes32" }], "name": "PlayerBalances", "outputs": [{ "name": "", "type": "uint256" }], "payable": false, "stateMutability": "view", "type": "function" }, { "constant": false, "inputs": [{ "name": "sender", "type": "address" }], "name": "changeAdmin", "outputs": [{ "name": "success", "type": "bool" }], "payable": false, "stateMutability": "nonpayable", "type": "function" }, { "constant": false, "inputs": [{ "name": "user", "type": "bytes32" }], "name": "deposit", "outputs": [{ "name": "success", "type": "bool" }], "payable": true, "stateMutability": "payable", "type": "function" }, { "constant": true, "inputs": [], "name": "admin", "outputs": [{ "name": "", "type": "address" }], "payable": false, "stateMutability": "view", "type": "function" }, { "inputs": [], "payable": true, "stateMutability": "payable", "type": "constructor" }];
 
-const colors = ['#f72585', '#b5179e', '#7209b7', '#560bad', '#480ca8', '#ffadad', '#22577a', '#38a3a5', '#57cc99', '#80ed99', '#ff0a54', '#ff477e', '#ff5c8a', '#004b23', '#006400', '#007200', '#38b000', '#ff7b00', '#ff9500', '#ffb700'];
+const colors = ['#f72585', '#b5179e', '#7209b7', '#560bad', '#480ca8', '#ffadad', '#57cc99', '#80ed99', '#ff0a54', '#ff477e', '#ff5c8a', '#004b23', '#006400', '#007200', '#38b000', '#ff7b00', '#ff9500', '#ffb700'];
 
 function getRandomInt(min, max) {
   min = Math.ceil(min);
@@ -94,6 +94,20 @@ class Home extends Component {
       }
       var msg = that.state.messageList;
       msg.push({ sender: message.sender, message: message.message, color: message.color });
+      that.setState({ messageList: msg });
+    });
+    socket.on("HISTORY", messages => {
+      var msg = that.state.messageList;
+      if(msg.length > 1)
+        return;
+      for(var i = 0; i < messages.length; i++)
+      {
+        var message = messages[i];
+        if(message.message !== "I won.")
+        {
+          msg.push({ sender: message.sender, message: message.message, color: message.color });
+        }
+      }
       that.setState({ messageList: msg });
     });
 

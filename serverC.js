@@ -65,10 +65,10 @@ getPopCount();
 var server = http.createServer(app);
 var io = require('socket.io').listen(server);
 //io.origins(['https://balloon.nirakara.co.uk', 'https://18.184.213.199:3000', '*']);
+var messages = [];
 io.on('connection', function (socket) {
   var sessionId = socket.id;
-
-
+  io.emit("HISTORY", messages);
   socket.on('disconnect', function () {
     console.log('Got disconnect!' + socket.id);
     var index = activeList.findIndex((e) => e.sessionId == socket.id);
@@ -86,7 +86,8 @@ io.on('connection', function (socket) {
   });
 
   socket.on('CHAT', function (message) {
-    io.emit("CHAT", message)
+    messages.push(message);
+    io.emit("CHAT", message);
   });
 
 

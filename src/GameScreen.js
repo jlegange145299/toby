@@ -4,6 +4,7 @@ import './App.css';
 
 var game;
 var balloonCount = 3;
+var balloonsDirection = [];
 
 class GameScreen extends Component {
   constructor(props) {
@@ -70,7 +71,7 @@ class GameScreen extends Component {
     });
 
     for (let i = 0; i < balloonCount; i++) {
-      let balloon = this.physics.add.sprite(Math.random() * window.innerWidth, window.innerHeight, 'balloon', { ignoreGravity: false }).setInteractive();
+      let balloon = this.physics.add.sprite((Math.random() / 3 + 0.3) * window.innerWidth, window.innerHeight, 'balloon', { ignoreGravity: false }).setInteractive();
       balloons.push(balloon);
       balloons[i].displayWidth = 140;
       balloons[i].displayHeight = 200;
@@ -93,12 +94,15 @@ class GameScreen extends Component {
         balloons[i].anims.play("pop", true);
         balloons[i].on('animationcomplete', (animation, frame) => {
           if (animation.key == "pop") {
-            balloons[i].x = Math.random() * window.innerWidth;
+            balloons[i].x = (Math.random() / 3 + 0.3) * window.innerWidth;
             balloons[i].y = window.innerHeight;
             balloons[i].anims.play("idle", true);
+            balloonsDirection[i] = balloonsDirection[i] * -1;
           }
         }, this);
       });
+
+      balloonsDirection.push(Math.pow(-1, i));
     }
     this.balloons = balloons;
   }
@@ -118,13 +122,15 @@ class GameScreen extends Component {
       }
       if (this.balloons[i].y < 0) {
         this.balloons[i].y = window.innerHeight;
+        this.balloons[i].x = (Math.random() / 3 + 0.3) * window.innerWidth;
+        balloonsDirection[i] = balloonsDirection[i] * -1;
       }
       else if (this.balloons[i].y > window.innerHeight) {
         this.balloons[i].y = 0;
       }
-      let speedX = 200 + Math.random() * 200;
+      let speedX = 100 + Math.random() * 200;
       let speedY = - 1 * (150 + Math.random() * 200);
-      this.balloons[i].setVelocity(speedX, speedY);
+      this.balloons[i].setVelocity(speedX * balloonsDirection[i], speedY);
     }
   }
 
