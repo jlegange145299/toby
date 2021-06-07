@@ -8,7 +8,14 @@ class Chat extends Component {
       <div className="Chat" style={{position: "absolute", left: "0px", bottom: "0px", backgroundColor: "#00000052", width: "350px"}}>
 
         <div style={{height: "300px", textAlign: "left", overflow: "auto", overflowWrap: "break-word"}}>
-        {this.props.messageList.map((o) => {return(<p style={{ color: this.props.colors[o.color]}}>{o.sender}: {o.message}</p>)})}
+        { this.props.messageList.map((o) => {
+              if(o.sender == 'date-separator')
+                return (<div style={{ textAlign:'center' }}>----------{o.message}----------</div>)
+              else
+                return(<div className='message-div' style={{ color: this.props.colors[o.color]}}>{o.sender}: {o.message} <div className='date'>{o.timestring}</div></div>)
+            }
+          )
+        }
         </div>
         <input
         value={this.props.chatMessage}

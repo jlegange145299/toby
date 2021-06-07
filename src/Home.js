@@ -10,6 +10,8 @@ import './App.css';
 import getWeb3 from './getWeb3';
 import { ethers } from 'ethers';
 import openSocket from 'socket.io-client';
+import getRandomInt from './utils';
+import { getTimeString } from './utils';
 //const serverURL = "http://localhost:5001/"// local dev
 const serverURL = "http://cryptopop.fun:5001/"// server deploy
 const socket = openSocket(serverURL);//, {transports: ['websocket', 'polling'], secure: false});
@@ -18,12 +20,6 @@ const socket = openSocket(serverURL);//, {transports: ['websocket', 'polling'], 
 const abi = [{ "constant": false, "inputs": [{ "name": "amount", "type": "uint256" }, { "name": "user", "type": "bytes32" }, { "name": "userAddress", "type": "address" }, { "name": "newBalance", "type": "uint256" }], "name": "withdraw", "outputs": [{ "name": "success", "type": "bool" }], "payable": false, "stateMutability": "nonpayable", "type": "function" }, { "constant": true, "inputs": [{ "name": "", "type": "bytes32" }], "name": "PlayerBalances", "outputs": [{ "name": "", "type": "uint256" }], "payable": false, "stateMutability": "view", "type": "function" }, { "constant": false, "inputs": [{ "name": "sender", "type": "address" }], "name": "changeAdmin", "outputs": [{ "name": "success", "type": "bool" }], "payable": false, "stateMutability": "nonpayable", "type": "function" }, { "constant": false, "inputs": [{ "name": "user", "type": "bytes32" }], "name": "deposit", "outputs": [{ "name": "success", "type": "bool" }], "payable": true, "stateMutability": "payable", "type": "function" }, { "constant": true, "inputs": [], "name": "admin", "outputs": [{ "name": "", "type": "address" }], "payable": false, "stateMutability": "view", "type": "function" }, { "inputs": [], "payable": true, "stateMutability": "payable", "type": "constructor" }];
 
 const colors = ['#f72585', '#b5179e', '#7209b7', '#560bad', '#480ca8', '#ffadad', '#57cc99', '#80ed99', '#ff0a54', '#ff477e', '#ff5c8a', '#004b23', '#006400', '#007200', '#38b000', '#ff7b00', '#ff9500', '#ffb700'];
-
-function getRandomInt(min, max) {
-  min = Math.ceil(min);
-  max = Math.floor(max);
-  return Math.floor(Math.random() * (max - min) + min); //The maximum is exclusive and the minimum is inclusive
-}
 
 class Home extends Component {
   constructor(props) {
@@ -44,9 +40,10 @@ class Home extends Component {
       forcePop: false,
       currentPanel: 0,
       amount: 0,
-      messageList: [{ sender: "GM", message: "Welcome to Balloon Game!" }],
+      messageList: [{ sender: "GM", message: "Welcome to Balloon Game!", date: new Date().getUTCMilliseconds(), timestring: getTimeString(new Date()) }],
       chatMessage: "",
       colorIndex: 0,
+      boomMsgList: []
     }
 
     this.login = this.login.bind(this)
@@ -87,25 +84,60 @@ class Home extends Component {
     });
     socket.on("CHAT", message => {
       if (message.message === "I won." /*&& message.sender !== this.state.username*/) {
-        this.props.alert.success(<div style={{fontSize: '1.5em',wordBreak: 'break-all'}}>{message.sender} won +100.</div>, {
+        /* this.props.alert.success(<div style={{ fontSize: '1.5em', wordBreak: 'break-all' }}>{message.sender} won +100.</div>, {
           position: positions.MIDDLE
-        });
+        }); */
+        message = message.sender + ": Just won +100";
+        var that = this;
+        var boomMsgList = this.state.boomMsgList;
+        boomMsgList.push(message);
+        this.setState({ boomMsgList: boomMsgList });
+        setTimeout(function () {
+          var boomMsgList1 = that.state.boomMsgList;
+          boomMsgList1.pop();
+          that.setState({ boomMsgList: boomMsgList1 });
+        }, 5000);
         return;
       }
       var msg = that.state.messageList;
-      msg.push({ sender: message.sender, message: message.message, color: message.color });
+
+      var date = new Date(message.date);
+
+      if (msg.length == 1) {
+        var t_msg = { sender: 'date-separator', date: message.date, message: date.toLocaleDateString() };
+        msg.push(t_msg);
+      }
+      else {
+        var predate = new Date(msg[msg.length - 1].date);
+        if (date.toLocaleDateString() != predate.toLocaleDateString()) {
+          var t_msg = { sender: 'date-separator', date: message.date, message: date.toLocaleDateString() };
+          msg.push(t_msg);
+        }
+      }
+
+      msg.push({ sender: message.sender, message: message.message, color: message.color, date: message.date, timestring: getTimeString(date) });
       that.setState({ messageList: msg });
     });
     socket.on("HISTORY", messages => {
       var msg = that.state.messageList;
-      if(msg.length > 1)
+      if (msg.length > 1)
         return;
-      for(var i = 0; i < messages.length; i++)
-      {
+      for (var i = 0; i < messages.length; i++) {
         var message = messages[i];
-        if(message.message !== "I won.")
-        {
-          msg.push({ sender: message.sender, message: message.message, color: message.color });
+        var date = new Date(message.date);
+        if (i == 0) {
+          var t_msg = { sender: 'date-separator', date: message.date, message: date.toLocaleDateString() };
+          msg.push(t_msg);
+        }
+        else {
+          var predate = new Date(messages[i - 1].date);
+          if (date.toLocaleDateString() != predate.toLocaleDateString()) {
+            var t_msg = { sender: 'date-separator', date: message.date, message: date.toLocaleDateString() };
+            msg.push(t_msg);
+          }
+        }
+        if (message.message !== "I won.") {
+          msg.push({ sender: message.sender, message: message.message, color: message.color, date: message.date, timestring: getTimeString(date) });
         }
       }
       that.setState({ messageList: msg });
@@ -247,14 +279,14 @@ class Home extends Component {
       }).then(response => response.json())
       .then(data => {
         if (data.status == "Winner") {
-          this.props.alert.success(<div style={{fontSize: '2em'}}>+100</div>,{
+          this.props.alert.success(<div style={{ fontSize: '2em' }}>+100</div>, {
             position: positions.MIDDLE
           });
           this.setState({ spent: this.state.spent + 100 });
           socket.emit("CHAT", { sender: this.state.username, message: "I won." });
         }
         else if (data.status == "Loser") {
-          this.props.alert.show("-10",{
+          this.props.alert.show("-10", {
             position: positions.BOTTOM_RIGHT
           });
           this.setState({ spent: this.state.spent - 10 });
@@ -439,9 +471,26 @@ class Home extends Component {
     ]
     return (
       <div className="Home">
+        {this.state.boomMsgList.length > 0 &&
+          <div className='boom-message-list'>
+            <div>
+              <div>
+                {this.state.boomMsgList.map((boomMsg) => {
+                  return (
+                    <div>
+                      <div className='boom-message' style={{ backgroundImage: 'url(/images/boom.png)' }}>
+                        {boomMsg}
+                      </div>
+                    </div>);
+                })
+                }
+              </div>
+            </div>
+          </div>
+        }
         <div className="Panel">
           <h1>Balloon Game</h1>
-          {this.state.currentUser == "" ? <Login login={this.login} register={this.register}/> : (this.state.gameStarted ? null : profilePanels[this.state.currentPanel])}
+          {this.state.currentUser == "" ? <Login login={this.login} register={this.register} /> : (this.state.gameStarted ? null : profilePanels[this.state.currentPanel])}
         </div>
         <GameScreen userCount={this.state.userCount} clickBalloon={this.clickBalloon} gameStarted={this.state.gameStarted} />
         <div style={{ position: "absolute", left: "0px", top: "0px", backgroundColor: "#00000052", borderRadius: "5px", margin: "10px", color: "white", padding: "5px" }}>
@@ -456,7 +505,7 @@ class Home extends Component {
           : null}
         {
           this.state.gameStarted &&
-          <Chat messageList={this.state.messageList} chatMessage={this.state.chatMessage} handleChat={this.handleMessageBox} sendMessage={this.sendMessage} colors={colors}/>
+          <Chat messageList={this.state.messageList} chatMessage={this.state.chatMessage} handleChat={this.handleMessageBox} sendMessage={this.sendMessage} colors={colors} />
         }
       </div>
     );

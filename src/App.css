@@ -100,3 +100,58 @@ p{
   -webkit-box-shadow: none;
   box-shadow: none;
 }
+
+.Chat{
+  font-size: 0.9em;
+}
+.Chat .message-div{
+  padding: 0.3em;
+  padding-bottom: 1em;
+  margin: 0.5em 0.3em;
+  position: relative;
+  border-radius: 0.3em;
+  border: 1px solid black;
+}
+.Chat .message-div .date{
+  position: absolute;
+  display: inline-block;
+  font-size: 0.8em;
+  right: 1em;
+  bottom: 0.1em;
+}
+.boom-message-list{
+  display: table;
+  word-break: break-all;
+  color: #F7EB1D;
+  position: fixed;
+  width: 250px;
+  height: 100vh;
+  top: 0;
+  left: calc(50vw - 125px);
+  z-index: 9;
+}
+.boom-message-list>div{
+  width: 100%;
+  display: table-cell;
+  vertical-align: middle;
+  text-align: center;  
+}
+.boom-message{
+  width: 250px;
+  height: 150px;
+  background-size: 100% 100%;
+  display: table-cell;
+  vertical-align: middle;
+  animation-name: fadeIn;
+  animation-duration: 5s;
+  animation-timing-function: linear;
+  animation-iteration-count: 1;
+  animation-direction: alternate;
+  animation-fill-mode: forwards;
+}
+@keyframes fadeIn {
+  0% {opacity: 0%;}
+  10% {opacity: 100%;}
+  90% {opacity: 100%;}
+  100% {opacity: 0%;}
+}

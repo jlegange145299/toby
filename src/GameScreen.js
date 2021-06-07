@@ -1,9 +1,10 @@
 import React, { Component } from 'react';
 import Phaser from 'phaser';
 import './App.css';
+import getRandomInt from './utils';
 
 var game;
-var balloonCount = 3;
+var balloonCount = getRandomInt(3,5);
 var balloonsDirection = [];
 
 class GameScreen extends Component {
@@ -71,7 +72,7 @@ class GameScreen extends Component {
     });
 
     for (let i = 0; i < balloonCount; i++) {
-      let balloon = this.physics.add.sprite((Math.random() / 3 + 0.3) * window.innerWidth, window.innerHeight, 'balloon', { ignoreGravity: false }).setInteractive();
+      let balloon = this.physics.add.sprite((Math.random() / 6 * (i + 1) + 0.2) * window.innerWidth, window.innerHeight + (300 * i), 'balloon', { ignoreGravity: false }).setInteractive();
       balloons.push(balloon);
       balloons[i].displayWidth = 140;
       balloons[i].displayHeight = 200;
@@ -94,7 +95,7 @@ class GameScreen extends Component {
         balloons[i].anims.play("pop", true);
         balloons[i].on('animationcomplete', (animation, frame) => {
           if (animation.key == "pop") {
-            balloons[i].x = (Math.random() / 3 + 0.3) * window.innerWidth;
+            balloons[i].x = (Math.random() / 6 * (i + 1) + 0.2) * window.innerWidth;
             balloons[i].y = window.innerHeight;
             balloons[i].anims.play("idle", true);
             balloonsDirection[i] = balloonsDirection[i] * -1;
@@ -122,12 +123,12 @@ class GameScreen extends Component {
       }
       if (this.balloons[i].y < 0) {
         this.balloons[i].y = window.innerHeight;
-        this.balloons[i].x = (Math.random() / 3 + 0.3) * window.innerWidth;
+        this.balloons[i].x = (Math.random() / 6 * (i + 1) + 0.2) * window.innerWidth;
         balloonsDirection[i] = balloonsDirection[i] * -1;
       }
-      else if (this.balloons[i].y > window.innerHeight) {
+      /* else if (this.balloons[i].y > window.innerHeight) {
         this.balloons[i].y = 0;
-      }
+      } */
       let speedX = 100 + Math.random() * 200;
       let speedY = - 1 * (150 + Math.random() * 200);
       this.balloons[i].setVelocity(speedX * balloonsDirection[i], speedY);

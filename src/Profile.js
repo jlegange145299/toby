@@ -17,7 +17,7 @@ class Profile extends Component {
           <button onClick={() => this.props.handlePanels(2)} className="midnight-blue-flat-button">Cash Out</button>
         }
         <br /><br /><br /><br />
-        <button onClick={this.props.logOut} className="midnight-blue-flat-button">BACK</button>
+        <button onClick={this.props.logOut} className="midnight-blue-flat-button">Quit</button>
         <div className="divider" />
         <button onClick={this.props.joinGame} className="midnight-blue-flat-button">JOIN GAME</button>
 

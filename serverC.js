@@ -86,6 +86,8 @@ io.on('connection', function (socket) {
   });
 
   socket.on('CHAT', function (message) {
+    message.date = Date.now();
+    console.log(message);
     messages.push(message);
     io.emit("CHAT", message);
   });
