@@ -12,8 +12,8 @@ import { ethers } from 'ethers';
 import openSocket from 'socket.io-client';
 import getRandomInt from './utils';
 import { getTimeString } from './utils';
-const serverURL = "http://localhost:5001/"// local dev
-//const serverURL = "http://cryptopop.fun:5001/"// server deploy
+//const serverURL = "http://localhost:5001/"// local dev
+const serverURL = "http://cryptopop.fun:5001/"// server deploy
 const socket = openSocket(serverURL);//, {transports: ['websocket', 'polling'], secure: false});
 
 
