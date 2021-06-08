@@ -43,7 +43,7 @@ class Home extends Component {
       messageList: [{ sender: "GM", message: "Welcome to Balloon Game!", date: new Date().getUTCMilliseconds(), timestring: getTimeString(new Date()) }],
       chatMessage: "",
       colorIndex: 0,
-      boomMsgList: []
+      boomMsgList: [ ]
     }
 
     this.login = this.login.bind(this)
@@ -83,23 +83,28 @@ class Home extends Component {
       that.getBalance();
     });
     socket.on("CHAT", message => {
-      if (message.message === "I won." /*&& message.sender !== this.state.username*/) {
+      if (message.message === "I won." && message.sender !== this.state.username) {
         /* this.props.alert.success(<div style={{ fontSize: '1.5em', wordBreak: 'break-all' }}>{message.sender} won +100.</div>, {
           position: positions.MIDDLE
         }); */
-        message = message.sender + ": Just won +100";
+        var boomMsg = message.sender + ": Just won +100";
         var that = this;
         var boomMsgList = this.state.boomMsgList;
-        boomMsgList.push(message);
+        boomMsgList.push(boomMsg);
         this.setState({ boomMsgList: boomMsgList });
+        console.log(this.state.boomMsgList);
         setTimeout(function () {
           var boomMsgList1 = that.state.boomMsgList;
           boomMsgList1.pop();
           that.setState({ boomMsgList: boomMsgList1 });
         }, 5000);
-        return;
       }
-      var msg = that.state.messageList;
+      if(message.message === "I won.")
+      {     
+        message.message = 'I just won +100.';
+      }
+
+      var msg = this.state.messageList;
 
       var date = new Date(message.date);
 
@@ -116,7 +121,7 @@ class Home extends Component {
       }
 
       msg.push({ sender: message.sender, message: message.message, color: message.color, date: message.date, timestring: getTimeString(date) });
-      that.setState({ messageList: msg });
+      this.setState({ messageList: msg });
     });
     socket.on("HISTORY", messages => {
       var msg = that.state.messageList;
@@ -135,6 +140,9 @@ class Home extends Component {
             var t_msg = { sender: 'date-separator', date: message.date, message: date.toLocaleDateString() };
             msg.push(t_msg);
           }
+        }
+        if (message.message === 'I won.') {
+          message.message = 'I just won +100.';
         }
         if (message.message !== "I won.") {
           msg.push({ sender: message.sender, message: message.message, color: message.color, date: message.date, timestring: getTimeString(date) });
@@ -492,6 +500,10 @@ class Home extends Component {
           <h1>Balloon Game</h1>
           {this.state.currentUser == "" ? <Login login={this.login} register={this.register} /> : (this.state.gameStarted ? null : profilePanels[this.state.currentPanel])}
         </div>
+        {
+          this.state.gameStarted &&
+          <Chat messageList={this.state.messageList} chatMessage={this.state.chatMessage} handleChat={this.handleMessageBox} sendMessage={this.sendMessage} colors={colors} />
+        }
         <GameScreen userCount={this.state.userCount} clickBalloon={this.clickBalloon} gameStarted={this.state.gameStarted} />
         <div style={{ position: "absolute", left: "0px", top: "0px", backgroundColor: "#00000052", borderRadius: "5px", margin: "10px", color: "white", padding: "5px" }}>
           <h1>{this.state.userCount}</h1>
@@ -503,10 +515,6 @@ class Home extends Component {
           <div onClick={this.quitGame} style={{ position: "absolute", right: "0px", bottom: "0px", backgroundColor: "#00000052", borderRadius: "5px", margin: "10px", color: "white", padding: "5px" }}>
             Quit Game</div>
           : null}
-        {
-          this.state.gameStarted &&
-          <Chat messageList={this.state.messageList} chatMessage={this.state.chatMessage} handleChat={this.handleMessageBox} sendMessage={this.sendMessage} colors={colors} />
-        }
       </div>
     );
   }

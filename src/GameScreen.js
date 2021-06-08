@@ -88,7 +88,10 @@ class GameScreen extends Component {
       balloons[i].setVelocity(speedX, speedY);
       balloons[i].body.angularVelocity = 250 + Math.random() * 100;
       balloons[i].body.angularDrag = 0;
-      balloons[i].on('pointerdown', function () {
+      balloons[i].on('pointerdown', function (e) {
+        let p = e.downElement.closest(".Chat");
+        if(p !== null)
+          return;
         if (game.started) {
           game.clickBalloon();
         }

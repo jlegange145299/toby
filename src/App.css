@@ -140,6 +140,7 @@ p{
   width: 250px;
   height: 150px;
   background-size: 100% 100%;
+  padding: 5%;
   display: table-cell;
   vertical-align: middle;
   animation-name: fadeIn;
