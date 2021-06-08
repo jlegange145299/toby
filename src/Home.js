@@ -12,8 +12,8 @@ import { ethers } from 'ethers';
 import openSocket from 'socket.io-client';
 import getRandomInt from './utils';
 import { getTimeString } from './utils';
-//const serverURL = "http://localhost:5001/"// local dev
-const serverURL = "http://cryptopop.fun:5001/"// server deploy
+const serverURL = "http://localhost:5001/"// local dev
+//const serverURL = "http://cryptopop.fun:5001/"// server deploy
 const socket = openSocket(serverURL);//, {transports: ['websocket', 'polling'], secure: false});
 
 
@@ -43,7 +43,7 @@ class Home extends Component {
       messageList: [{ sender: "GM", message: "Welcome to Balloon Game!", date: new Date().getUTCMilliseconds(), timestring: getTimeString(new Date()) }],
       chatMessage: "",
       colorIndex: 0,
-      boomMsgList: [ ]
+      boomMsgList: []
     }
 
     this.login = this.login.bind(this)
@@ -99,8 +99,7 @@ class Home extends Component {
           that.setState({ boomMsgList: boomMsgList1 });
         }, 5000);
       }
-      if(message.message === "I won.")
-      {     
+      if (message.message === "I won.") {
         message.message = 'I just won +100.';
       }
 
@@ -291,7 +290,7 @@ class Home extends Component {
             position: positions.MIDDLE
           });
           this.setState({ spent: this.state.spent + 100 });
-          socket.emit("CHAT", { sender: this.state.username, message: "I won." });
+          socket.emit("CHAT", { sender: this.state.username, message: "I won.", color: this.state.colorIndex });
         }
         else if (data.status == "Loser") {
           this.props.alert.show("-10", {
