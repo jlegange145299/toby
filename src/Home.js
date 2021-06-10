@@ -12,8 +12,7 @@ import { ethers } from 'ethers';
 import openSocket from 'socket.io-client';
 import getRandomInt from './utils';
 import { getTimeString } from './utils';
-//const serverURL = "http://localhost:5001/"// local dev
-const serverURL = "http://cryptopop.fun:5001/"// server deploy
+import serverURL from './constansts';
 const socket = openSocket(serverURL);//, {transports: ['websocket', 'polling'], secure: false});
 
 
@@ -269,7 +268,10 @@ class Home extends Component {
 
   }
 
-  clickBalloon() {
+  clickBalloon(idx) {    
+    socket.emit("POP",idx);
+    if(!this.state.gameStarted)
+      return;
     console.log("CLICKED")
     fetch(serverURL + 'click/',
       {
@@ -503,7 +505,7 @@ class Home extends Component {
           this.state.gameStarted &&
           <Chat messageList={this.state.messageList} chatMessage={this.state.chatMessage} handleChat={this.handleMessageBox} sendMessage={this.sendMessage} colors={colors} />
         }
-        <GameScreen userCount={this.state.userCount} clickBalloon={this.clickBalloon} gameStarted={this.state.gameStarted} />
+        <GameScreen userCount={this.state.userCount} clickBalloon={this.clickBalloon} gameStarted={this.state.gameStarted} socket={socket}/>
         <div style={{ position: "absolute", left: "0px", top: "0px", backgroundColor: "#00000052", borderRadius: "5px", margin: "10px", color: "white", padding: "5px" }}>
           <h1>{this.state.userCount}</h1>
         Players</div>

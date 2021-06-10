@@ -62,6 +62,40 @@ function setPopCount() {
 
 getPopCount();
 
+// for sync balloons
+var balloonCount = 3;
+var balloonSpeeds = [{ x: 0, y: 0 }, { x: 0, y: 0 }, { x: 0, y: 0 }];
+var balloonPosition = [{ x: 0, y: 1 }, { x: 0, y: 1 }, { x: 0, y: 1 }];
+var balloonStartX = [ 0, 0, 0 ];
+var balloonAngular = [0, 0, 0];
+var balloonDirection = [{ x: 1, y: -1 }, { x: -1, y: -1 }, { x: 1, y: -1 }];
+for (var i = 0; i < balloonCount; i++) {
+  balloonSpeeds[i].x = (Math.random() / 1000 + 0.001);
+  balloonSpeeds[i].y = (Math.random() / 1000 + 0.002);
+  balloonPosition[i].x = (Math.random() / 5 * i + 0.2);
+  balloonStartX[i] = balloonPosition[i].x;
+  balloonPosition[i].y = 1 + 0.01 * i;
+  balloonAngular[i] = 150 + Math.random() * 80;
+}
+setInterval(function () {
+  for (var i = 0; i < balloonCount; i++) {
+    balloonPosition[i].x += balloonDirection[i].x * balloonSpeeds[i].x;
+    balloonPosition[i].y += balloonDirection[i].y * balloonSpeeds[i].y;
+    if (balloonPosition[i].x > 1) {
+      balloonPosition[i].x = 0;
+    }
+    else if (balloonPosition[i].x < 0) {
+      balloonPosition[i].x = 1;
+    }
+    if (balloonPosition[i].y < 0) {
+      balloonPosition[i].y = 1;
+      balloonPosition[i].x = balloonPosition[i].x;
+      balloonDirection[i].x = balloonDirection[i].x * -1;
+    }
+  }
+}, 14);
+// end sync balloons
+
 var server = http.createServer(app);
 var io = require('socket.io').listen(server);
 //io.origins(['https://balloon.nirakara.co.uk', 'https://18.184.213.199:3000', '*']);
@@ -69,6 +103,15 @@ var messages = [];
 io.on('connection', function (socket) {
   var sessionId = socket.id;
   io.emit("HISTORY", messages);
+  /*
+  io.emit("SETBALLOONS", { 
+    position: balloonPosition, 
+    speed: balloonSpeeds, 
+    angular: balloonAngular, 
+    direction: balloonDirection,
+    start: balloonStartX
+  });
+  */
   socket.on('disconnect', function () {
     console.log('Got disconnect!' + socket.id);
     var index = activeList.findIndex((e) => e.sessionId == socket.id);
@@ -92,7 +135,24 @@ io.on('connection', function (socket) {
     io.emit("CHAT", message);
   });
 
-
+  socket.on('POP', function (idx) {
+    io.emit("POP", { 
+      position: balloonPosition, 
+      speed: balloonSpeeds, 
+      direction: balloonDirection,
+      index: idx
+    });
+    setTimeout(function(){
+      balloonPosition[idx].x = balloonStartX[idx];
+      balloonPosition[idx].y = 1;
+      balloonDirection[idx].x = balloonDirection[idx].x * -1;
+      io.emit("RESETBALLOON", { 
+        position: balloonPosition, 
+        speed: balloonSpeeds, 
+        direction: balloonDirection
+      });
+    }, 150);
+  });
 });
 
 
@@ -171,7 +231,15 @@ function generateUID() {
   secondPart = ("000" + secondPart.toString(36)).slice(-3);
   return firstPart + secondPart;
 }
-
+app.get('/getballoon', function (req, res) {
+  res.send({ 
+    position: balloonPosition, 
+    speed: balloonSpeeds, 
+    angular: balloonAngular, 
+    direction: balloonDirection,
+    start: balloonStartX
+  });
+});
 
 app.post('/quitGame', async function (req, res) {
 
@@ -188,15 +256,11 @@ app.post('/quitGame', async function (req, res) {
         io.emit("ADD", { count: activeList.length })
         res.send({ status: "Ok" });
       });
-
     });
-
-
   }
   else {
     res.send({ status: "Not In Game Currently" })
   }
-
 });
 
 

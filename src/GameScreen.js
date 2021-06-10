@@ -1,11 +1,18 @@
 import React, { Component } from 'react';
 import Phaser from 'phaser';
+import serverURL from './constansts';
 import './App.css';
-import getRandomInt from './utils';
 
 var game;
-var balloonCount = getRandomInt(3,5);
-var balloonsDirection = [];
+//var balloonCount = getRandomInt(3,5);
+var balloonCount = 3;
+var balloonDirection = [];
+var balloonSpeed = [];
+var balloonAngular = [];
+var balloonPosition = [];
+var balloonStartX = [];
+
+var balloons = [];
 
 class GameScreen extends Component {
   constructor(props) {
@@ -32,9 +39,6 @@ class GameScreen extends Component {
   create() {
     //console.log(game);
     //game.stage.backgroundColor = "#4488AA";
-
-
-
     let bg = this.add.sprite(0, 0, 'background');
     bg.displayWidth = window.innerWidth;
     bg.displayHeight = window.innerHeight;
@@ -55,8 +59,6 @@ class GameScreen extends Component {
     this.cloudFront.tileScaleX = 0.5;
     this.cloudFront.tileScaleY = 0.6;
 
-    let balloons = [];
-
     this.anims.create({
       key: 'idle',
       frames: this.anims.generateFrameNumbers('balloon', { start: 0, end: 0 }),
@@ -71,44 +73,56 @@ class GameScreen extends Component {
       //repeat: -1
     });
 
-    for (let i = 0; i < balloonCount; i++) {
-      let balloon = this.physics.add.sprite((Math.random() / 6 * (i + 1) + 0.2) * window.innerWidth, window.innerHeight + (300 * i), 'balloon', { ignoreGravity: false }).setInteractive();
-      balloons.push(balloon);
-      balloons[i].displayWidth = 140;
-      balloons[i].displayHeight = 200;
-
-      let speedX = 400 + Math.random() * 200;
-      let speedY = - 1 * (300 + Math.random() * 200);
-      // balloons[i].body.maxVelocity = { x: speedX, y: speedY };
-      balloons[i].body.allowGravity = false;
-      balloons[i].setBounce(0, 0);
-      balloons[i].setAcceleration(0, 0);
-      balloons[i].setCollideWorldBounds(false);
-      balloons[i].body.setGravityY(0);
-      balloons[i].setVelocity(speedX, speedY);
-      balloons[i].body.angularVelocity = 250 + Math.random() * 100;
-      balloons[i].body.angularDrag = 0;
-      balloons[i].on('pointerdown', function (e) {
-        let p = e.downElement.closest(".Chat");
-        if(p !== null)
-          return;
-        if (game.started) {
-          game.clickBalloon();
+    fetch(serverURL + 'getballoon/',
+      {
+        method: 'get',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
         }
-        balloons[i].anims.play("pop", true);
-        balloons[i].on('animationcomplete', (animation, frame) => {
-          if (animation.key == "pop") {
-            balloons[i].x = (Math.random() / 6 * (i + 1) + 0.2) * window.innerWidth;
-            balloons[i].y = window.innerHeight;
-            balloons[i].anims.play("idle", true);
-            balloonsDirection[i] = balloonsDirection[i] * -1;
-          }
-        }, this);
-      });
+      }).then(response => response.json())
+      .then(data => {
+        balloonAngular = data.angular;
+        balloonSpeed = data.speed;
+        balloonPosition = data.position;
+        balloonDirection = data.direction;
+        balloonStartX = data.start;
 
-      balloonsDirection.push(Math.pow(-1, i));
-    }
-    this.balloons = balloons;
+        for (let i = 0; i < balloonCount; i++) {
+          let balloon = this.physics.add.sprite(balloonPosition[i].x * window.innerWidth, balloonPosition[i].y * window.innerHeight, 'balloon', { ignoreGravity: false }).setInteractive();
+          balloons.push(balloon);
+          balloons[i].displayWidth = 140;
+          balloons[i].displayHeight = 200;
+
+          balloons[i].body.allowGravity = false;
+          balloons[i].setBounce(0, 0);
+          balloons[i].setAcceleration(0, 0);
+          balloons[i].setCollideWorldBounds(false);
+          balloons[i].body.setGravityY(0);
+          balloons[i].setVelocity(0, 0);
+          balloons[i].body.angularVelocity = balloonAngular[i];
+          balloons[i].body.angularDrag = 0;
+          balloons[i].on('pointerdown', function (e) {
+            let p = e.downElement.closest(".Chat");
+            if (p !== null)
+              return;
+            if (game.started) {
+              game.clickBalloon(i);
+            }
+            // balloons[i].anims.play("pop", true);
+            /*balloons[i].on('animationcomplete', (animation, frame) => {
+              if (animation.key == "pop") {
+                balloons[i].x = balloonStartX[i] * window.innerWidth;
+                balloons[i].y = window.innerHeight;
+                balloonDirection[i].x = balloonDirection[i].x * -1;
+                balloons[i].anims.play("idle", true);
+              }
+            }, this);*/
+          });
+        }
+      }).catch(function (err) {
+        console.log(err)
+      });
   }
 
 
@@ -116,25 +130,27 @@ class GameScreen extends Component {
     this.cloudBack.tilePositionX -= 0.15;
     this.cloudMid.tilePositionX += 0.3;
     this.cloudFront.tilePositionX -= 0.75;
+    if(balloons.length == balloonCount)
+    {
+      for (let i = 0; i < balloonCount; i++) {
+        balloons[i].x = window.innerWidth * balloonPosition[i].x;
+        balloons[i].y = window.innerHeight * balloonPosition[i].y;
 
-    for (let i = 0; i < balloonCount; i++) {
-      if (this.balloons[i].x < 0) {
-        this.balloons[i].x = window.innerWidth;
+        balloonPosition[i].x += balloonDirection[i].x * balloonSpeed[i].x;
+        balloonPosition[i].y += balloonDirection[i].y * balloonSpeed[i].y;
+        if (balloonPosition[i].x > 1) {
+          balloonPosition[i].x = 0;
+        }
+        else if (balloonPosition[i].x < 0) {
+          balloonPosition[i].x = 1;
+        }
+        if (balloonPosition[i].y < 0) {
+          balloonPosition[i].y = 1;
+          balloonPosition[i].x = balloonPosition[i].x;
+          balloonDirection[i].x = balloonDirection[i].x * -1;
+        }
+        balloons[i].setVelocity(0, 0);
       }
-      else if (this.balloons[i].x > window.innerWidth) {
-        this.balloons[i].x = 0;
-      }
-      if (this.balloons[i].y < 0) {
-        this.balloons[i].y = window.innerHeight;
-        this.balloons[i].x = (Math.random() / 6 * (i + 1) + 0.2) * window.innerWidth;
-        balloonsDirection[i] = balloonsDirection[i] * -1;
-      }
-      /* else if (this.balloons[i].y > window.innerHeight) {
-        this.balloons[i].y = 0;
-      } */
-      let speedX = 100 + Math.random() * 200;
-      let speedY = - 1 * (150 + Math.random() * 200);
-      this.balloons[i].setVelocity(speedX * balloonsDirection[i], speedY);
     }
   }
 
@@ -170,6 +186,35 @@ class GameScreen extends Component {
     console.log(game)
     game.clickBalloon = this.props.clickBalloon;
     game.started = this.props.gameStarted;
+
+    /*
+    this.props.socket.on("SETBALLOONS", datas => {
+      balloonAngular = datas.angular;
+      balloonSpeed = datas.speed;
+      balloonPosition = datas.position;
+      balloonDirection = datas.direction;
+      balloonStartX = datas.start;
+    });
+    */
+    this.props.socket.on("POP", data => {
+      var index = data.index;
+
+      balloons[index].play("pop");
+      balloons[index].on('animationcomplete', (animation, frame) => {
+        if (animation.key == "pop") {
+          /*
+          balloons[index].x = balloonStartX[index] * window.innerWidth;
+          balloons[index].y = window.innerHeight;
+          */
+          balloons[index].anims.play("idle", true);
+        }
+      }, this);
+    });
+    this.props.socket.on("RESETBALLOON",data=>{
+      balloonSpeed = data.speed;
+      balloonPosition = data.position;
+      balloonDirection = data.direction;
+    });
   }
 
 
