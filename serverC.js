@@ -151,7 +151,7 @@ io.on('connection', function (socket) {
         speed: balloonSpeeds, 
         direction: balloonDirection
       });
-    }, 150);
+    }, 100);
   });
 });
 
