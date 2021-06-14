@@ -93,7 +93,7 @@ setInterval(function () {
       balloonDirection[i].x = balloonDirection[i].x * -1;
     }
   }
-}, 14);
+}, 1000/64);
 // end sync balloons
 
 var server = http.createServer(app);
@@ -149,9 +149,10 @@ io.on('connection', function (socket) {
       io.emit("RESETBALLOON", { 
         position: balloonPosition, 
         speed: balloonSpeeds, 
-        direction: balloonDirection
+        direction: balloonDirection,
+        index: idx
       });
-    }, 100);
+    }, 200);
   });
 });
 

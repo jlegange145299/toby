@@ -82,7 +82,7 @@ class Home extends Component {
       that.getBalance();
     });
     socket.on("CHAT", message => {
-      if (message.message === "I won." && message.sender !== this.state.username) {
+      if (message.message === "I won." /*&& message.sender !== this.state.username*/) {
         /* this.props.alert.success(<div style={{ fontSize: '1.5em', wordBreak: 'break-all' }}>{message.sender} won +100.</div>, {
           position: positions.MIDDLE
         }); */
@@ -289,7 +289,7 @@ class Home extends Component {
       .then(data => {
         if (data.status == "Winner") {
           this.props.alert.success(<div style={{ fontSize: '2em' }}>+100</div>, {
-            position: positions.MIDDLE
+            position: positions.BOTTOM_CENTER
           });
           this.setState({ spent: this.state.spent + 100 });
           socket.emit("CHAT", { sender: this.state.username, message: "I won.", color: this.state.colorIndex });

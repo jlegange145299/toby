@@ -69,7 +69,7 @@ class GameScreen extends Component {
     this.anims.create({
       key: 'pop',
       frames: this.anims.generateFrameNumbers('balloon', { start: 0, end: 16 }),
-      frameRate: 96
+      frameRate: 64
       //repeat: -1
     });
 
@@ -211,9 +211,10 @@ class GameScreen extends Component {
       }, this);
     });
     this.props.socket.on("RESETBALLOON",data=>{
-      balloonSpeed = data.speed;
-      balloonPosition = data.position;
-      balloonDirection = data.direction;
+      var index = data.index;
+      balloonSpeed[index] = data.speed[index];
+      balloonPosition[index] = data.position[index];
+      balloonDirection[index] = data.direction[index];
     });
   }
 
