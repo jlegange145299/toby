@@ -42,7 +42,7 @@ class Home extends Component {
       messageList: [{ sender: "GM", message: "Welcome to Balloon Game!", date: new Date().getUTCMilliseconds(), timestring: getTimeString(new Date()) }],
       chatMessage: "",
       colorIndex: 0,
-      boomMsgList: []
+      boomMsgList: [ ]
     }
 
     this.login = this.login.bind(this)
@@ -82,23 +82,28 @@ class Home extends Component {
       that.getBalance();
     });
     socket.on("CHAT", message => {
-      if (message.message === "I won." /*&& message.sender !== this.state.username*/) {
-        /* this.props.alert.success(<div style={{ fontSize: '1.5em', wordBreak: 'break-all' }}>{message.sender} won +100.</div>, {
-          position: positions.MIDDLE
-        }); */
-        var boomMsg = message.sender + ": Just won +100";
-        var that = this;
-        var boomMsgList = this.state.boomMsgList;
-        boomMsgList.push(boomMsg);
-        this.setState({ boomMsgList: boomMsgList });
-        console.log(this.state.boomMsgList);
-        setTimeout(function () {
-          var boomMsgList1 = that.state.boomMsgList;
-          boomMsgList1.pop();
-          that.setState({ boomMsgList: boomMsgList1 });
-        }, 5000);
-      }
       if (message.message === "I won.") {
+        //if(message.sender !== this.state.username)
+        {
+          /* this.props.alert.success(<div style={{ fontSize: '1.5em', wordBreak: 'break-all' }}>{message.sender} won +100.</div>, {
+            position: positions.MIDDLE
+          }); */
+          var boomMsg = "";
+          if(message.sender !== this.state.username)
+            boomMsg = message.sender + ": Just won +100";
+          else
+            boomMsg = "You just won +100";
+          var that = this;
+          var boomMsgList = this.state.boomMsgList;
+          boomMsgList.push(boomMsg);
+          this.setState({ boomMsgList: boomMsgList });
+          console.log(this.state.boomMsgList);
+          setTimeout(function () {
+            var boomMsgList1 = that.state.boomMsgList;
+            boomMsgList1.pop();
+            that.setState({ boomMsgList: boomMsgList1 });
+          }, 5000);
+        }
         message.message = 'I just won +100.';
       }
 
@@ -288,9 +293,9 @@ class Home extends Component {
       }).then(response => response.json())
       .then(data => {
         if (data.status == "Winner") {
-          this.props.alert.success(<div style={{ fontSize: '2em' }}>+100</div>, {
+          /* this.props.alert.success(<div style={{ fontSize: '2em' }}>+100</div>, {
             position: positions.BOTTOM_CENTER
-          });
+          }); */
           this.setState({ spent: this.state.spent + 100 });
           socket.emit("CHAT", { sender: this.state.username, message: "I won.", color: this.state.colorIndex });
         }
