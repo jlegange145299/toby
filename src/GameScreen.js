@@ -5,14 +5,22 @@ import './App.css';
 
 var game;
 //var balloonCount = getRandomInt(3,5);
-var balloonCount = 3;
+var balloonCount = 5;
 var balloonDirection = [];
 var balloonSpeed = [];
 var balloonAngular = [];
 var balloonPosition = [];
-var balloonStartX = [];
+var balloonStart = [];
 
 var balloons = [];
+var canClick = [];
+var texts = [];
+var toShowText = [];
+for(var i = 0; i < balloonCount; i++)
+{
+  canClick.push(true);
+  toShowText.push(false);
+}
 
 class GameScreen extends Component {
   constructor(props) {
@@ -73,6 +81,9 @@ class GameScreen extends Component {
       //repeat: -1
     });
 
+    var style = { font: "32px Arial", fill: "#FFFFFF"};
+
+
     fetch(serverURL + 'getballoon/',
       {
         method: 'get',
@@ -86,11 +97,16 @@ class GameScreen extends Component {
         balloonSpeed = data.speed;
         balloonPosition = data.position;
         balloonDirection = data.direction;
-        balloonStartX = data.start;
+        balloonStart = data.start;
 
         for (let i = 0; i < balloonCount; i++) {
           let balloon = this.physics.add.sprite(balloonPosition[i].x * window.innerWidth, balloonPosition[i].y * window.innerHeight, 'balloon', { ignoreGravity: false }).setInteractive();
           balloons.push(balloon);
+          let text = this.add.text(0, 0, "", style);          
+          text.setStroke("#de77ae", 6)
+          text.setShadow(2, 2, "#333333", 3, true, true);
+          texts.push(text);
+
           balloons[i].displayWidth = 140;
           balloons[i].displayHeight = 200;
 
@@ -104,20 +120,17 @@ class GameScreen extends Component {
           balloons[i].body.angularDrag = 0;
           balloons[i].on('pointerdown', function (e) {
             let p = e.downElement.closest(".Chat");
-            if (p !== null)
+            if (p !== null || !canClick[i])
               return;
             if (game.started) {
-              game.clickBalloon(i);
+              canClick[i] = false;
+              toShowText[i] = true;
+              game.clickBalloon(i,texts[i]);
+              setTimeout(function(){
+                toShowText[i] = false;
+                texts[i].setText("");
+              },500);
             }
-            // balloons[i].anims.play("pop", true);
-            /*balloons[i].on('animationcomplete', (animation, frame) => {
-              if (animation.key == "pop") {
-                balloons[i].x = balloonStartX[i] * window.innerWidth;
-                balloons[i].y = window.innerHeight;
-                balloonDirection[i].x = balloonDirection[i].x * -1;
-                balloons[i].anims.play("idle", true);
-              }
-            }, this);*/
           });
         }
       }).catch(function (err) {
@@ -145,11 +158,16 @@ class GameScreen extends Component {
           balloonPosition[i].x = 1;
         }
         if (balloonPosition[i].y < 0) {
-          balloonPosition[i].y = 1;
+          balloonPosition[i].y = balloonStart[i].y;
           balloonPosition[i].x = balloonPosition[i].x;
           balloonDirection[i].x = balloonDirection[i].x * -1;
         }
         balloons[i].setVelocity(0, 0);
+        if(!toShowText[i])
+        {
+          texts[i].x = balloons[i].x-10;
+          texts[i].y = balloons[i].y-10;
+        }
       }
     }
   }
@@ -183,30 +201,17 @@ class GameScreen extends Component {
       }
     };
     game = new Phaser.Game(config);
-    console.log(game)
     game.clickBalloon = this.props.clickBalloon;
     game.started = this.props.gameStarted;
 
-    /*
-    this.props.socket.on("SETBALLOONS", datas => {
-      balloonAngular = datas.angular;
-      balloonSpeed = datas.speed;
-      balloonPosition = datas.position;
-      balloonDirection = datas.direction;
-      balloonStartX = datas.start;
-    });
-    */
     this.props.socket.on("POP", data => {
       var index = data.index;
 
       balloons[index].play("pop");
       balloons[index].on('animationcomplete', (animation, frame) => {
         if (animation.key == "pop") {
-          /*
-          balloons[index].x = balloonStartX[index] * window.innerWidth;
-          balloons[index].y = window.innerHeight;
-          */
           balloons[index].anims.play("idle", true);
+          canClick[index] = true;
         }
       }, this);
     });

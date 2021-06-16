@@ -42,7 +42,8 @@ class Home extends Component {
       messageList: [{ sender: "GM", message: "Welcome to Balloon Game!", date: new Date().getUTCMilliseconds(), timestring: getTimeString(new Date()) }],
       chatMessage: "",
       colorIndex: 0,
-      boomMsgList: [ ]
+      boomMsgList: [ ],
+      isProcessing: false
     }
 
     this.login = this.login.bind(this)
@@ -273,7 +274,7 @@ class Home extends Component {
 
   }
 
-  clickBalloon(idx) {    
+  clickBalloon(idx,score) {    
     socket.emit("POP",idx);
     if(!this.state.gameStarted)
       return;
@@ -300,9 +301,10 @@ class Home extends Component {
           socket.emit("CHAT", { sender: this.state.username, message: "I won.", color: this.state.colorIndex });
         }
         else if (data.status == "Loser") {
-          this.props.alert.show("-10", {
+          score.setText("-10");
+          /* this.props.alert.show("-10", {
             position: positions.BOTTOM_RIGHT
-          });
+          }); */
           this.setState({ spent: this.state.spent - 10 });
         }
         else {
@@ -369,6 +371,17 @@ class Home extends Component {
   }
 
   cashOut() {
+    if(this.state.isProcessing)
+    {
+      this.props.alert.error("You can't withdraw at the moment.");
+      return;
+    }
+    if(this.state.amount > this.state.balance)
+    {
+      this.props.alert.error("Please input correct amount.");
+      return;
+    }
+    this.setState({ isProcessing: true });
     fetch(serverURL + 'withdraw/',
       {
         method: 'post',
@@ -387,13 +400,16 @@ class Home extends Component {
       }).then(response => response.json())
       .then(data => {
         if (data.status != "Ok") {
-          this.props.alert.show(data.status)
+          this.props.alert.show(data.status);
         }
         else {
-          this.props.alert.show("Withdrawal Confirmed")
-          this.setState({ currentPanel: 0 })
+          this.props.alert.show("Withdrawal confirmed");
+          this.setState({ currentPanel: 0 });
+          this.getBalance();
         }
+        this.setState({ isProcessing: false });
       }).catch(function (err) {
+        this.setState({ isProcessing: true });
         console.log(err)
       });
   }

@@ -1,14 +1,13 @@
 var express = require('express');
-var path = require('path');
 var mongoose = require('mongoose');
 var bodyParser = require('body-parser');
-var router = express.Router();
 var app = express();
 var fs = require('fs');
 var bcrypt = require('bcrypt');
 var http = require('http');
 var Web3 = require('web3');
-var Tx = require('ethereumjs-tx')
+var schedule = require('node-schedule');
+var ethers = require('ethers');
 var web3 = new Web3(Web3.givenProvider || "http://ropsten.infura.io");
 //app.use(cors())
 mongoose.connect('mongodb://localhost/BalloonDB');
@@ -63,18 +62,19 @@ function setPopCount() {
 getPopCount();
 
 // for sync balloons
-var balloonCount = 3;
-var balloonSpeeds = [{ x: 0, y: 0 }, { x: 0, y: 0 }, { x: 0, y: 0 }];
-var balloonPosition = [{ x: 0, y: 1 }, { x: 0, y: 1 }, { x: 0, y: 1 }];
-var balloonStartX = [ 0, 0, 0 ];
-var balloonAngular = [0, 0, 0];
-var balloonDirection = [{ x: 1, y: -1 }, { x: -1, y: -1 }, { x: 1, y: -1 }];
+var balloonCount = 5;
+var balloonSpeeds = [{ x: 0, y: 0 }, { x: 0, y: 0 }, { x: 0, y: 0 }, { x: 0, y: 0 }, { x: 0, y: 0 }];
+var balloonPosition = [{ x: 0, y: 1 }, { x: 0, y: 1 }, { x: 0, y: 1 }, { x: 0, y: 1 }, { x: 0, y: 1 }];
+var balloonStart = [ { x: 0, y: 0 }, { x: 0, y: 0 }, { x: 0, y: 0 }, { x: 0, y: 0 }, { x: 0, y: 0 } ];
+var balloonAngular = [ 0, 0, 0, 0, 0 ];
+var balloonDirection = [{ x: 1, y: -1 }, { x: -1, y: -1 }, { x: 1, y: -1 }, { x: 1, y: -1 }, { x: 1, y: -1 }];
 for (var i = 0; i < balloonCount; i++) {
-  balloonSpeeds[i].x = (Math.random() / 1000 + 0.001);
-  balloonSpeeds[i].y = (Math.random() / 1000 + 0.002);
+  balloonSpeeds[i].x = (Math.random() / 1000 + 0.001 + 0.0005 * i);
+  balloonSpeeds[i].y = (Math.random() / 1000 + 0.002 + 0.0005 * i);
   balloonPosition[i].x = (Math.random() / 5 * i + 0.2);
-  balloonStartX[i] = balloonPosition[i].x;
-  balloonPosition[i].y = 1 + 0.01 * i;
+  balloonPosition[i].y = 1 + i + 0.3;
+  balloonStart[i].x = balloonPosition[i].x;
+  balloonStart[i].y = balloonPosition[i].y;
   balloonAngular[i] = 150 + Math.random() * 80;
 }
 setInterval(function () {
@@ -88,7 +88,7 @@ setInterval(function () {
       balloonPosition[i].x = 1;
     }
     if (balloonPosition[i].y < 0) {
-      balloonPosition[i].y = 1;
+      balloonPosition[i].y = balloonStart[i].y;
       balloonPosition[i].x = balloonPosition[i].x;
       balloonDirection[i].x = balloonDirection[i].x * -1;
     }
@@ -98,20 +98,10 @@ setInterval(function () {
 
 var server = http.createServer(app);
 var io = require('socket.io').listen(server);
-//io.origins(['https://balloon.nirakara.co.uk', 'https://18.184.213.199:3000', '*']);
 var messages = [];
 io.on('connection', function (socket) {
   var sessionId = socket.id;
   io.emit("HISTORY", messages);
-  /*
-  io.emit("SETBALLOONS", { 
-    position: balloonPosition, 
-    speed: balloonSpeeds, 
-    angular: balloonAngular, 
-    direction: balloonDirection,
-    start: balloonStartX
-  });
-  */
   socket.on('disconnect', function () {
     console.log('Got disconnect!' + socket.id);
     var index = activeList.findIndex((e) => e.sessionId == socket.id);
@@ -143,8 +133,8 @@ io.on('connection', function (socket) {
       index: idx
     });
     setTimeout(function(){
-      balloonPosition[idx].x = balloonStartX[idx];
-      balloonPosition[idx].y = 1;
+      balloonPosition[idx].x = balloonStart[idx].x;
+      balloonPosition[idx].y = balloonStart[idx].y;
       balloonDirection[idx].x = balloonDirection[idx].x * -1;
       io.emit("RESETBALLOON", { 
         position: balloonPosition, 
@@ -155,10 +145,6 @@ io.on('connection', function (socket) {
     }, 200);
   });
 });
-
-
-var schedule = require('node-schedule');
-var ethers = require('ethers');
 
 var isProcessing = false;
 var j = schedule.scheduleJob('*/5 * * * * *', function () {
@@ -184,9 +170,6 @@ var j = schedule.scheduleJob('*/5 * * * * *', function () {
       let contract = new ethers.Contract(contractAddress, abi, wallet);
       let contractWithSigner = await contract.connect(wallet);
       if (product[0].uid == "WITHDRAW" && !isNaN(product[0].newBalance)) {
-        //console.log(product[0])
-        //console.log(ethers.utils.parseEther((product[0].transfer / 10000).toString()).toString())
-        //console.log(ethers.utils.parseEther((product[0].newBalance / 10000).toString()).toString())
         tx = await contractWithSigner.withdraw(ethers.utils.parseEther((product[0].transfer / 10000).toString()), product[0].user, product[0].coinbase, ethers.utils.parseEther((product[0].newBalance / 10000).toString()), overrides).catch(function (e) { console.log(e); return null });
       }
       else {
@@ -238,7 +221,7 @@ app.get('/getballoon', function (req, res) {
     speed: balloonSpeeds, 
     angular: balloonAngular, 
     direction: balloonDirection,
-    start: balloonStartX
+    start: balloonStart,
   });
 });
 
@@ -462,9 +445,12 @@ app.post('/withdraw', function (req, res) {
                 newBalance: balance + dbBalance - withdrawal,
                 uid: "WITHDRAW"
               });
-
+            
               newWithdrawal.save(function (e) {
-                res.send({ status: "Ok" })
+                product.balance -= withdrawal;
+                product.save(function(){
+                  res.send({ status: "Ok" });
+                });
               });
             }
 
