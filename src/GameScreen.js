@@ -120,8 +120,10 @@ class GameScreen extends Component {
           balloons[i].body.angularDrag = 0;
           balloons[i].on('pointerdown', function (e) {
             let p = e.downElement.closest(".Chat");
-            if (p !== null || !canClick[i])
+            if (p !== null || !canClick[i] || e.downElement.className == "quitButton")
+            {
               return;
+            }
             if (game.started) {
               canClick[i] = false;
               toShowText[i] = true;

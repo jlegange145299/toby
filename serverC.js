@@ -70,11 +70,14 @@ var balloonAngular = [ 0, 0, 0, 0, 0 ];
 var balloonDirection = [{ x: 1, y: -1 }, { x: -1, y: -1 }, { x: 1, y: -1 }, { x: 1, y: -1 }, { x: 1, y: -1 }];
 for (var i = 0; i < balloonCount; i++) {
   balloonSpeeds[i].x = (Math.random() / 1000 + 0.001 + 0.0005 * i);
-  balloonSpeeds[i].y = (Math.random() / 1000 + 0.002 + 0.0005 * i);
+  balloonSpeeds[i].y = (Math.random() / 1000 + 0.005 + 0.0005 * i);
+
   balloonPosition[i].x = (Math.random() / 5 * i + 0.2);
   balloonPosition[i].y = 1 + i + 0.3;
+
   balloonStart[i].x = balloonPosition[i].x;
   balloonStart[i].y = balloonPosition[i].y;
+
   balloonAngular[i] = 150 + Math.random() * 80;
 }
 setInterval(function () {
@@ -374,7 +377,10 @@ app.post('/click', function (req, res) {
       activeList[index].won += 100;
       result = "Winner";
     }
-    activeList[index].spent += 10;
+    else
+    {
+      activeList[index].spent += 10;
+    }
     res.send({ status: result })
   }
   else {

@@ -534,7 +534,7 @@ class Home extends Component {
           Balance
         <h1>{this.state.balance + this.state.spent}</h1></div>
         {this.state.gameStarted ?
-          <div onClick={this.quitGame} style={{ position: "absolute", right: "0px", bottom: "0px", backgroundColor: "#00000052", borderRadius: "5px", margin: "10px", color: "white", padding: "5px" }}>
+          <div onClick={this.quitGame} className="quitButton" style={{ position: "absolute", right: "0px", bottom: "0px", backgroundColor: "#00000052", borderRadius: "5px", margin: "10px", color: "white", padding: "5px" }}>
             Quit Game</div>
           : null}
       </div>
