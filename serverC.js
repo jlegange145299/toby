@@ -13,6 +13,7 @@ var web3 = new Web3(Web3.givenProvider || "http://ropsten.infura.io");
 mongoose.connect('mongodb://localhost/BalloonDB');
 
 var activeList = [];
+var loginList = {};
 var popCount = 0;
 
 const abi = [{ "constant": false, "inputs": [{ "name": "amount", "type": "uint256" }, { "name": "user", "type": "bytes32" }, { "name": "userAddress", "type": "address" }, { "name": "newBalance", "type": "uint256" }], "name": "withdraw", "outputs": [{ "name": "success", "type": "bool" }], "payable": false, "stateMutability": "nonpayable", "type": "function" }, { "constant": true, "inputs": [{ "name": "", "type": "bytes32" }], "name": "PlayerBalances", "outputs": [{ "name": "", "type": "uint256" }], "payable": false, "stateMutability": "view", "type": "function" }, { "constant": false, "inputs": [{ "name": "sender", "type": "address" }], "name": "changeAdmin", "outputs": [{ "name": "success", "type": "bool" }], "payable": false, "stateMutability": "nonpayable", "type": "function" }, { "constant": false, "inputs": [{ "name": "user", "type": "bytes32" }], "name": "deposit", "outputs": [{ "name": "success", "type": "bool" }], "payable": true, "stateMutability": "payable", "type": "function" }, { "constant": true, "inputs": [], "name": "admin", "outputs": [{ "name": "", "type": "address" }], "payable": false, "stateMutability": "view", "type": "function" }, { "inputs": [], "payable": true, "stateMutability": "payable", "type": "constructor" }];
@@ -108,8 +109,8 @@ io.on('connection', function (socket) {
   socket.on('disconnect', function () {
     console.log('Got disconnect!' + socket.id);
     var index = activeList.findIndex((e) => e.sessionId == socket.id);
+    var User = mongoose.model('Users', orderSchema);
     if (index != -1) {
-      var User = mongoose.model('Users', orderSchema);
       console.log(activeList[index])
       User.findOne({ userhash: activeList[index].username }, function (err, usr) {
         usr.balance += activeList[index].won - activeList[index].spent;
@@ -117,6 +118,15 @@ io.on('connection', function (socket) {
           activeList.splice(index, 1);
           io.emit("ADD", { count: activeList.length })
         });
+        loginList[usr.userhash] = false;
+      });
+    }
+    if(loginList[socket.id])
+    {
+      console.log("logout");
+      User.findOne({ userhash: loginList[socket.id] }, function (err, usr) {
+        delete loginList[usr.userhash];
+        delete loginList[socket.id];
       });
     }
   });
@@ -301,12 +311,21 @@ app.post('/login', async function (req, res) {
       if (req.body.password != null && req.body.sessionId != null) {
         bcrypt.compare(req.body.password, usr.password, async function (err, result) {
           if (result == true) {
-            usr.socketId = req.body.sessionId;
-            usr.save();
-            res.send({ status: "Ok" })
+            if(loginList[usr.userhash])
+            {
+              res.send({ status: "Already login" })
+            }
+            else
+            {
+              usr.socketId = req.body.sessionId;
+              usr.save();
+              res.send({ status: "Ok" });
+              loginList[usr.userhash] = req.body.sessionId;
+              loginList[req.body.sessionId] = usr.userhash;
+            }
           }
           else {
-            res.send({ status: "Password Incorrect" })
+            res.send({ status: "Password Incorrect" });
           }
         });
       }
