@@ -39,7 +39,7 @@ class Home extends Component {
       forcePop: false,
       currentPanel: 0,
       amount: 0,
-      messageList: [{ sender: "GM", message: "Welcome to Balloon Game!", date: new Date().getUTCMilliseconds(), timestring: getTimeString(new Date()) }],
+      messageList: [{ sender: "GM", message: "Welcome to CryptoPop!", date: new Date().getUTCMilliseconds(), timestring: getTimeString(new Date()) }],
       chatMessage: "",
       colorIndex: 0,
       boomMsgList: [ ],
@@ -519,7 +519,7 @@ class Home extends Component {
           </div>
         }
         <div className="Panel">
-          <h1>Balloon Game</h1>
+          <h1>CryptoPop</h1>
           {this.state.currentUser == "" ? <Login login={this.login} register={this.register} /> : (this.state.gameStarted ? null : profilePanels[this.state.currentPanel])}
         </div>
         {
