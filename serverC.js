@@ -8,7 +8,7 @@ var http = require('http');
 var Web3 = require('web3');
 var schedule = require('node-schedule');
 var ethers = require('ethers');
-var web3 = new Web3(Web3.givenProvider || "http://ropsten.infura.io");
+var web3 = new Web3(new Web3.providers.HttpProvider("https://data-seed-prebsc-1-s1.binance.org:8545"));
 //app.use(cors())
 mongoose.connect('mongodb://localhost/BalloonDB');
 
@@ -18,12 +18,13 @@ var popCount = 0;
 
 const abi = [{ "constant": false, "inputs": [{ "name": "amount", "type": "uint256" }, { "name": "user", "type": "bytes32" }, { "name": "userAddress", "type": "address" }, { "name": "newBalance", "type": "uint256" }], "name": "withdraw", "outputs": [{ "name": "success", "type": "bool" }], "payable": false, "stateMutability": "nonpayable", "type": "function" }, { "constant": true, "inputs": [{ "name": "", "type": "bytes32" }], "name": "PlayerBalances", "outputs": [{ "name": "", "type": "uint256" }], "payable": false, "stateMutability": "view", "type": "function" }, { "constant": false, "inputs": [{ "name": "sender", "type": "address" }], "name": "changeAdmin", "outputs": [{ "name": "success", "type": "bool" }], "payable": false, "stateMutability": "nonpayable", "type": "function" }, { "constant": false, "inputs": [{ "name": "user", "type": "bytes32" }], "name": "deposit", "outputs": [{ "name": "success", "type": "bool" }], "payable": true, "stateMutability": "payable", "type": "function" }, { "constant": true, "inputs": [], "name": "admin", "outputs": [{ "name": "", "type": "address" }], "payable": false, "stateMutability": "view", "type": "function" }, { "inputs": [], "payable": true, "stateMutability": "payable", "type": "constructor" }];
 
-var balloonContract = new web3.eth.Contract(abi, '0x7Af6faCB28061cFEb5f7D6538B4d63988C8AeE66', {
-  from: '0x28cAf49F02904e4620524561888a7820FB47Ca35', // default from address
+var contractAddress = "0x97a28458962011c923bb24ca25e40C86301C18D1";
+var adminWallet = '0x28cAf49F02904e4620524561888a7820FB47Ca35';
+
+var balloonContract = new web3.eth.Contract(abi, contractAddress, {
+  from: adminWallet, // default from address
   gasPrice: '20000000000' // default gas price in wei, 20 gwei in this case
 });
-
-var contractAddress = "0x7Af6faCB28061cFEb5f7D6538B4d63988C8AeE66";
 
 
 const crypto = require('crypto');
@@ -66,8 +67,8 @@ getPopCount();
 var balloonCount = 5;
 var balloonSpeeds = [{ x: 0, y: 0 }, { x: 0, y: 0 }, { x: 0, y: 0 }, { x: 0, y: 0 }, { x: 0, y: 0 }];
 var balloonPosition = [{ x: 0, y: 1 }, { x: 0, y: 1 }, { x: 0, y: 1 }, { x: 0, y: 1 }, { x: 0, y: 1 }];
-var balloonStart = [ { x: 0, y: 0 }, { x: 0, y: 0 }, { x: 0, y: 0 }, { x: 0, y: 0 }, { x: 0, y: 0 } ];
-var balloonAngular = [ 0, 0, 0, 0, 0 ];
+var balloonStart = [{ x: 0, y: 0 }, { x: 0, y: 0 }, { x: 0, y: 0 }, { x: 0, y: 0 }, { x: 0, y: 0 }];
+var balloonAngular = [0, 0, 0, 0, 0];
 var balloonDirection = [{ x: 1, y: -1 }, { x: -1, y: -1 }, { x: 1, y: -1 }, { x: 1, y: -1 }, { x: 1, y: -1 }];
 for (var i = 0; i < balloonCount; i++) {
   balloonSpeeds[i].x = (Math.random() / 1000 + 0.001 + 0.0005 * i);
@@ -97,7 +98,7 @@ setInterval(function () {
       balloonDirection[i].x = balloonDirection[i].x * -1;
     }
   }
-}, 1000/64);
+}, 1000 / 64);
 // end sync balloons
 
 var server = http.createServer(app);
@@ -121,8 +122,7 @@ io.on('connection', function (socket) {
         loginList[usr.userhash] = false;
       });
     }
-    if(loginList[socket.id])
-    {
+    if (loginList[socket.id]) {
       console.log("logout");
       User.findOne({ userhash: loginList[socket.id] }, function (err, usr) {
         delete loginList[usr.userhash];
@@ -139,19 +139,19 @@ io.on('connection', function (socket) {
   });
 
   socket.on('POP', function (idx) {
-    io.emit("POP", { 
-      position: balloonPosition, 
-      speed: balloonSpeeds, 
+    io.emit("POP", {
+      position: balloonPosition,
+      speed: balloonSpeeds,
       direction: balloonDirection,
       index: idx
     });
-    setTimeout(function(){
+    setTimeout(function () {
       balloonPosition[idx].x = balloonStart[idx].x;
       balloonPosition[idx].y = balloonStart[idx].y;
       balloonDirection[idx].x = balloonDirection[idx].x * -1;
-      io.emit("RESETBALLOON", { 
-        position: balloonPosition, 
-        speed: balloonSpeeds, 
+      io.emit("RESETBALLOON", {
+        position: balloonPosition,
+        speed: balloonSpeeds,
         direction: balloonDirection,
         index: idx
       });
@@ -171,27 +171,27 @@ var j = schedule.scheduleJob('*/5 * * * * *', function () {
       isProcessing = true;
       var tx;
       var privateKey = "f3ca3bf3af0372cbcb951617bfbfaa53f372b3e6d61c87c1dfd094beba9ef8d5";
-      let provider = new ethers.providers.InfuraProvider('ropsten');
-      let wallet = new ethers.Wallet(privateKey, provider)
-      let transactionCountPromise = await provider.getTransactionCount(wallet.address)
-      let overrides = {
-        gasPrice: ethers.utils.parseUnits('50.0', 'gwei'),
-        gasLimit: 120000,
-        nonce: transactionCountPromise
-      }
+      let query = balloonContract.methods.withdraw(
+        ethers.utils.parseEther((product[0].transfer / 10000).toString()),
+        product[0].user,
+        product[0].coinbase,
+        ethers.utils.parseEther((product[0].newBalance / 10000).toString())
+      );
+      let encodedABI = query.encodeABI();
+      let signedTx = await web3.eth.accounts.signTransaction(
+        {
+          data: encodedABI,
+          from: adminWallet,
+          gas: 3000000,
+          to: balloonContract.options.address
+        },
+        privateKey,
+        false,
+      );
 
-      let contract = new ethers.Contract(contractAddress, abi, wallet);
-      let contractWithSigner = await contract.connect(wallet);
-      if (product[0].uid == "WITHDRAW" && !isNaN(product[0].newBalance)) {
-        tx = await contractWithSigner.withdraw(ethers.utils.parseEther((product[0].transfer / 10000).toString()), product[0].user, product[0].coinbase, ethers.utils.parseEther((product[0].newBalance / 10000).toString()), overrides).catch(function (e) { console.log(e); return null });
-      }
-      else {
-        tx = null;
-      }
+      tx = await web3.eth.sendSignedTransaction(signedTx.rawTransaction);
 
-
-      console.log(tx)
-      if (tx != null) {
+      if (tx.status) {
         var result = await tx.wait().catch(function (e) {
           console.log("TX ERROR")
         });
@@ -229,10 +229,10 @@ function generateUID() {
   return firstPart + secondPart;
 }
 app.get('/getballoon', function (req, res) {
-  res.send({ 
-    position: balloonPosition, 
-    speed: balloonSpeeds, 
-    angular: balloonAngular, 
+  res.send({
+    position: balloonPosition,
+    speed: balloonSpeeds,
+    angular: balloonAngular,
     direction: balloonDirection,
     start: balloonStart,
   });
@@ -311,12 +311,10 @@ app.post('/login', async function (req, res) {
       if (req.body.password != null && req.body.sessionId != null) {
         bcrypt.compare(req.body.password, usr.password, async function (err, result) {
           if (result == true) {
-            if(loginList[usr.userhash])
-            {
+            if (loginList[usr.userhash]) {
               res.send({ status: "Already login" })
             }
-            else
-            {
+            else {
               usr.socketId = req.body.sessionId;
               usr.save();
               res.send({ status: "Ok" });
@@ -396,8 +394,7 @@ app.post('/click', function (req, res) {
       activeList[index].won += 100;
       result = "Winner";
     }
-    else
-    {
+    else {
       activeList[index].spent += 10;
     }
     res.send({ status: result })
@@ -444,9 +441,7 @@ app.post('/withdraw', function (req, res) {
 
         bcrypt.compare(req.body.password, product.password, async function (err, result) {
           if (result == true) {
-            let provider = new ethers.providers.InfuraProvider('ropsten');
-            let contract = new ethers.Contract(contractAddress, abi, provider);
-            let tx = await contract.PlayerBalances(req.body.username);
+            let tx = await balloonContract.methods.PlayerBalances(req.body.username).call();
             balance = Number((ethers.utils.formatEther(tx) * 10000).toFixed(0));
             dbBalance = Number(product.balance);
             withdrawal = Number(req.body.amount)
@@ -470,10 +465,10 @@ app.post('/withdraw', function (req, res) {
                 newBalance: balance + dbBalance - withdrawal,
                 uid: "WITHDRAW"
               });
-            
+
               newWithdrawal.save(function (e) {
                 product.balance -= withdrawal;
-                product.save(function(){
+                product.save(function () {
                   res.send({ status: "Ok" });
                 });
               });

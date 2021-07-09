@@ -13,12 +13,15 @@ import openSocket from 'socket.io-client';
 import getRandomInt from './utils';
 import { getTimeString } from './utils';
 import serverURL from './constansts';
+import Web3 from 'web3'
 const socket = openSocket(serverURL);//, {transports: ['websocket', 'polling'], secure: false});
 
 
-const abi = [{ "constant": false, "inputs": [{ "name": "amount", "type": "uint256" }, { "name": "user", "type": "bytes32" }, { "name": "userAddress", "type": "address" }, { "name": "newBalance", "type": "uint256" }], "name": "withdraw", "outputs": [{ "name": "success", "type": "bool" }], "payable": false, "stateMutability": "nonpayable", "type": "function" }, { "constant": true, "inputs": [{ "name": "", "type": "bytes32" }], "name": "PlayerBalances", "outputs": [{ "name": "", "type": "uint256" }], "payable": false, "stateMutability": "view", "type": "function" }, { "constant": false, "inputs": [{ "name": "sender", "type": "address" }], "name": "changeAdmin", "outputs": [{ "name": "success", "type": "bool" }], "payable": false, "stateMutability": "nonpayable", "type": "function" }, { "constant": false, "inputs": [{ "name": "user", "type": "bytes32" }], "name": "deposit", "outputs": [{ "name": "success", "type": "bool" }], "payable": true, "stateMutability": "payable", "type": "function" }, { "constant": true, "inputs": [], "name": "admin", "outputs": [{ "name": "", "type": "address" }], "payable": false, "stateMutability": "view", "type": "function" }, { "inputs": [], "payable": true, "stateMutability": "payable", "type": "constructor" }];
+const abi = [{"constant":false,"inputs":[{"name":"amount","type":"uint256"},{"name":"user","type":"bytes32"},{"name":"userAddress","type":"address"},{"name":"newBalance","type":"uint256"}],"name":"withdraw","outputs":[{"name":"success","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[{"name":"","type":"bytes32"}],"name":"PlayerBalances","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"sender","type":"address"}],"name":"changeAdmin","outputs":[{"name":"success","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"user","type":"bytes32"}],"name":"deposit","outputs":[{"name":"success","type":"bool"}],"payable":true,"stateMutability":"payable","type":"function"},{"constant":true,"inputs":[],"name":"admin","outputs":[{"name":"","type":"address"}],"payable":false,"stateMutability":"view","type":"function"},{"inputs":[],"payable":true,"stateMutability":"payable","type":"constructor"}];
 
 const colors = ['#f72585', '#b5179e', '#7209b7', '#560bad', '#480ca8', '#ffadad', '#57cc99', '#80ed99', '#ff0a54', '#ff477e', '#ff5c8a', '#004b23', '#006400', '#007200', '#38b000', '#ff7b00', '#ff9500', '#ffb700'];
+
+const contractAddress = "0x97a28458962011c923bb24ca25e40C86301C18D1";
 
 class Home extends Component {
   constructor(props) {
@@ -242,9 +245,8 @@ class Home extends Component {
   }
 
   async getBalance() {
-    let provider = ethers.getDefaultProvider('ropsten');
-    let contract = new ethers.Contract("0x7Af6faCB28061cFEb5f7D6538B4d63988C8AeE66", abi, provider);
-    let currentValue = await contract.PlayerBalances(this.state.currentUser);
+    let contract = new this.state.web3.eth.Contract(abi, contractAddress);
+    let currentValue = await contract.methods.PlayerBalances(this.state.currentUser).call();
     console.log(ethers.utils.formatEther(currentValue) * 10000)
     this.setState({ balance: Number((ethers.utils.formatEther(currentValue) * 10000).toFixed(0)) })
 
@@ -345,10 +347,15 @@ class Home extends Component {
   async topUp() {
     //if(key.substr(0,2) != "0x")
     //key = "0x" + this.state.privateKey;
-    let mainContract = new this.state.web3.eth.Contract(abi, "0x7Af6faCB28061cFEb5f7D6538B4d63988C8AeE66");
-    let account = await window.ethereum.request({ method: 'eth_requestAccounts' });
-    let chainId = await window.ethereum.request({ method: 'eth_chainId' });
-    if (chainId != 3) {
+    if(!window.BinanceChain)
+    {
+      this.props.alert.show("Please install Binance Chain Wallet.");
+      return;
+    }
+    let mainContract = new this.state.web3.eth.Contract(abi, contractAddress);
+    let account = await window.BinanceChain.request({ method: 'eth_requestAccounts' });
+    let chainId = await window.BinanceChain.request({ method: 'eth_chainId' });
+    if (chainId != 97) {
       this.props.alert.error("Wrong network");
       return;
     }
@@ -356,8 +363,9 @@ class Home extends Component {
     let overrides = {
       gasLimit: 53000,
       from: account[0],
-      value: amount,
+      value: amount
     };
+    console.log(overrides);
     let thisObj = this;
     mainContract.methods.deposit(this.state.currentUser).send(overrides).on('transactionHash', function () {
       thisObj.props.alert.show("Please Await Transaction")
