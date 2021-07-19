@@ -18,7 +18,7 @@ var popCount = 0;
 
 const abi = [{ "constant": false, "inputs": [{ "name": "amount", "type": "uint256" }, { "name": "user", "type": "bytes32" }, { "name": "userAddress", "type": "address" }, { "name": "newBalance", "type": "uint256" }], "name": "withdraw", "outputs": [{ "name": "success", "type": "bool" }], "payable": false, "stateMutability": "nonpayable", "type": "function" }, { "constant": true, "inputs": [{ "name": "", "type": "bytes32" }], "name": "PlayerBalances", "outputs": [{ "name": "", "type": "uint256" }], "payable": false, "stateMutability": "view", "type": "function" }, { "constant": false, "inputs": [{ "name": "sender", "type": "address" }], "name": "changeAdmin", "outputs": [{ "name": "success", "type": "bool" }], "payable": false, "stateMutability": "nonpayable", "type": "function" }, { "constant": false, "inputs": [{ "name": "user", "type": "bytes32" }], "name": "deposit", "outputs": [{ "name": "success", "type": "bool" }], "payable": true, "stateMutability": "payable", "type": "function" }, { "constant": true, "inputs": [], "name": "admin", "outputs": [{ "name": "", "type": "address" }], "payable": false, "stateMutability": "view", "type": "function" }, { "inputs": [], "payable": true, "stateMutability": "payable", "type": "constructor" }];
 
-var contractAddress = "0x97a28458962011c923bb24ca25e40C86301C18D1";
+var contractAddress = "0xE537F53D5C045Eae39cf4Ca308605b26eB5e85E1";
 var adminWallet = '0x28cAf49F02904e4620524561888a7820FB47Ca35';
 
 var balloonContract = new web3.eth.Contract(abi, contractAddress, {
@@ -192,21 +192,14 @@ var j = schedule.scheduleJob('*/5 * * * * *', function () {
       tx = await web3.eth.sendSignedTransaction(signedTx.rawTransaction);
 
       if (tx.status) {
-        var result = await tx.wait().catch(function (e) {
-          console.log("TX ERROR")
-        });
-
-        if (result) {
-          var User = mongoose.model('Users', orderSchema);
-          User.findOne({ userhash: product[0].user }, async function (err, usr) {
-            usr.balance = 0;
-            usr.save(function (e) {
-              product[0].remove(function (e) { isProcessing = false; });
-              io.emit("CheckBalance", { user: product[0].user })
-            });
+        var User = mongoose.model('Users', orderSchema);
+        User.findOne({ userhash: product[0].user }, async function (err, usr) {
+          usr.balance = 0;
+          usr.save(function (e) {
+            product[0].remove(function (e) { isProcessing = false; });
+            io.emit("CheckBalance", { user: product[0].user })
           });
-
-        }
+        });
       }
       else {
         product[0].remove(function (e) { isProcessing = false; });
@@ -348,9 +341,7 @@ app.post('/joinGame', function (req, res) {
           console.log(usr.socketId == req.body.sessionId);
           console.log(usr.userhash == req.body.username)
           if (usr && usr.socketId == req.body.sessionId && usr.userhash == req.body.username) {
-            let provider = new ethers.providers.InfuraProvider('ropsten');
-            let contract = new ethers.Contract(contractAddress, abi, provider);
-            let tx = await contract.PlayerBalances(req.body.username);
+            let tx = await balloonContract.methods.PlayerBalances(req.body.username).call();
             balance = Number((ethers.utils.formatEther(tx) * 10000).toFixed(0));
 
             console.log("Contract Balance: " + balance);
@@ -489,7 +480,7 @@ app.post('/withdraw', function (req, res) {
 
 //app.use('/api', require('./routes/api'));
 
-server.listen(5001);
+server.listen(2083);
 
 //server.listen(5001);
 console.log('API Running On Port 5001');

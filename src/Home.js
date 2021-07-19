@@ -21,7 +21,7 @@ const abi = [{"constant":false,"inputs":[{"name":"amount","type":"uint256"},{"na
 
 const colors = ['#f72585', '#b5179e', '#7209b7', '#560bad', '#480ca8', '#ffadad', '#57cc99', '#80ed99', '#ff0a54', '#ff477e', '#ff5c8a', '#004b23', '#006400', '#007200', '#38b000', '#ff7b00', '#ff9500', '#ffb700'];
 
-const contractAddress = "0x97a28458962011c923bb24ca25e40C86301C18D1";
+const contractAddress = "0xE537F53D5C045Eae39cf4Ca308605b26eB5e85E1";
 
 class Home extends Component {
   constructor(props) {
